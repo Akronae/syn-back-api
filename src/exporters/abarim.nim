@@ -17,14 +17,14 @@ type
     base_url: string
   
   Word = object
-    greek: string
-    english: string
-    parsing: string
+    greek*: string
+    english*: string
+    parsing*: string
 
   Verse = object
-    number: int
-    translated: string
-    words: seq[Word]
+    number*: int
+    translated*: string
+    words*: seq[Word]
 
 proc final_url(page: ChapterPage): string =
   return &"{page.base_url}/{page.book}/{page.book}-{page.chapter}-parsed.html"

@@ -8,22 +8,27 @@ proc import_data(): Future[void] {.async.} =
   let db = mongo["syn-text-api"]
   if not await mongo.connect():
     quit "cannot connect to mongo!"
-  # let data = abarim.abarim_export()
-  var docs = newSeq[BsonDocument]()
-  let lal = bson {
-    "name": "test",
-    "data": "la"
-  }
-  docs.add(lal)
-  discard await db.create("test")
-  let col = db["test"]
-  discard await col.insert(docs)
+  let data = await abarim.abarim_export()
 
-waitFor import_data()
+  # var docs = newSeq[BsonDocument]()
+  # for verse in data:
+  #   for word in verse.words:
+  #     let doc = bson {lol: "word"}
+  #     docs.add(doc)
+
+  # discard await db.create("test")
+  # let col = db["test"]
+  # discard await col.insert(docs)
 
 proc hello*(ctx: prologue.Context) {.async.} =
   resp "<h1>Hello, Prologue!</h1>"
 
-let app = prologue.newApp()
-app.get("/", hello)
-app.run()
+proc main() {.async.} =
+  await import_data()
+
+  let app = prologue.newApp()
+  app.get("/", hello)
+  app.run()
+
+when isMainModule:
+  waitFor main()
