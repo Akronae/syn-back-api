@@ -22,7 +22,10 @@ pub struct ParsedChapter {
 }
 
 #[allow(dead_code)]
-pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, Box<dyn Error>> {
+pub async fn parse_chapter(
+    chapter: isize,
+    book: Book,
+) -> Result<ParsedChapter, Box<dyn Error + Send + Sync>> {
     let base_url = "https://www.abarim-publications.com/Interlinear-New-Testament";
     let collection = "New Testament";
     let full_url = &get_url(base_url, book, chapter);
@@ -70,7 +73,7 @@ fn parse_verse(
     verse_number: isize,
     dom: &tl::VDom,
     parser: &tl::Parser,
-) -> Result<Verse, Box<dyn Error>> {
+) -> Result<Verse, Box<dyn Error + Send + Sync>> {
     let trans = get_verse_translation(verse_number + 1, dom)
         .with_context(|| format!("could not find verse {verse_number} translation"))?;
 
@@ -121,7 +124,7 @@ fn parse_word(
     chapter_number: isize,
     verse_number: isize,
     word_number: isize,
-) -> Result<Word, Box<dyn Error>> {
+) -> Result<Word, Box<dyn Error + Send + Sync>> {
     let word_html = word
         .get(words_wrapper_dom.parser())
         .context("context")?

@@ -2,6 +2,7 @@ use std::{env::VarError, error::Error};
 
 use anyhow::Context;
 use once_cell::sync::OnceCell;
+
 use strum::Display;
 
 static ENV_LOADED: OnceCell<bool> = OnceCell::new();
@@ -11,12 +12,13 @@ static ENV_LOADED: OnceCell<bool> = OnceCell::new();
 pub enum EnvVar {
     Port,
     RustLog,
+    MongoUri,
 }
 
 pub struct Config;
 
 impl Config {
-    pub fn get(self, var: EnvVar) -> Result<String, Box<dyn Error>> {
+    pub fn get(self, var: EnvVar) -> Result<String, Box<dyn Error + Send + Sync>> {
         if !(*ENV_LOADED.get_or_init(|| false)) {
             dotenv::dotenv()
                 .with_context(|| "Failed to load .env file")
@@ -42,8 +44,7 @@ impl Config {
 
         let str = str.unwrap();
 
-        str
-            .parse::<i32>()
+        str.parse::<i32>()
             .map_err(|_e| format!("Failed to parse env var {var} to i32").into())
     }
 }

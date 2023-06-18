@@ -1,22 +1,27 @@
+use std::error::Error;
 
-
+use anyhow::Context;
 use mongodb::{options::ClientOptions, Client, Database};
 use once_cell::sync::OnceCell;
 
-
+use crate::config::{Config, EnvVar};
 
 static DB: OnceCell<Database> = OnceCell::new();
-
-pub async fn get_db() -> Database {
+pub async fn get_db() -> Result<Database, Box<dyn Error + Send + Sync>> {
     if DB.get().is_none() {
-        let mut client_options = ClientOptions::parse("mongodb://192.168.1.26")
+        let mut client_options = ClientOptions::parse(Config.get(EnvVar::MongoUri)?)
             .await
-            .expect("Failed to parse MongoDB URI");
+            .with_context(|| "Failed to parse MongoDB URI")?;
+
         client_options.app_name = Some("My App".to_string());
         let client = Client::with_options(client_options).expect("Failed to initialize client.");
         let db = client.database("syn-text-api");
-        DB.set(db).expect("Failed to set DB");
+        DB.set(db)
+            .map_err(|_| "Failed to set DB instance in OnceCell")?;
     }
 
-    return DB.get().unwrap().clone();
+    Ok(DB
+        .get()
+        .with_context(|| "could not get DB instance from OnceCell")?
+        .clone())
 }

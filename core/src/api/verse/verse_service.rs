@@ -1,6 +1,7 @@
-use std::io;
+use std::{error::Error, io};
 
 use async_trait::async_trait;
+use futures::TryFutureExt;
 use mongodb::bson::Document;
 use nameof::name_of;
 use springtime_di::{component_alias, injectable, Component};
@@ -45,8 +46,10 @@ pub trait VerseService {
 struct Service;
 
 impl Service {
-    async fn get_collection(&self) -> mongodb::Collection<Verse> {
-        get_db().await.collection::<Verse>("verses")
+    async fn get_collection(
+        &self,
+    ) -> Result<mongodb::Collection<Verse>, Box<dyn Error + Send + Sync>> {
+        Ok(get_db().await?.collection::<Verse>("verses"))
     }
 }
 
@@ -57,8 +60,9 @@ impl VerseService for Service {
         return self
             .get_collection()
             .await
+            .map_err(|e| e.to_io())?
             .find_one(Into::<Document>::into(filters), None)
-            .await
-            .map_err(|e| e.to_io());
+            .map_err(|e| e.to_io())
+            .await;
     }
 }
