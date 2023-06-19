@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use futures::{future::BoxFuture, FutureExt};
 use springtime::application::{self, Application};
 use springtime_di::{
@@ -11,6 +9,7 @@ use springtime_web_axum::config::{
 
 use crate::{
     config::{Config, EnvVar},
+    error::SafeError,
 };
 
 use tracing::info;
@@ -52,7 +51,7 @@ impl WebConfigProvider for MyWebConfigProvider {
     }
 }
 
-pub async fn init() -> Result<Application<ComponentFactory>, Box<dyn Error>> {
+pub async fn init() -> Result<Application<ComponentFactory>, SafeError> {
     let mut app = application::create_default()?;
     app.run().await?;
 

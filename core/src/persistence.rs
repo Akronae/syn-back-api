@@ -1,13 +1,14 @@
-use std::error::Error;
-
 use anyhow::Context;
 use mongodb::{options::ClientOptions, Client, Database};
 use once_cell::sync::OnceCell;
 
-use crate::config::{Config, EnvVar};
+use crate::{
+    config::{Config, EnvVar},
+    error::SafeError,
+};
 
 static DB: OnceCell<Database> = OnceCell::new();
-pub async fn get_db() -> Result<Database, Box<dyn Error + Send + Sync>> {
+pub async fn get_db() -> Result<Database, SafeError> {
     if DB.get().is_none() {
         let mut client_options = ClientOptions::parse(Config.get(EnvVar::MongoUri)?)
             .await

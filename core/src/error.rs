@@ -15,3 +15,5 @@ impl ToIoError for Box<dyn std::error::Error + Send + Sync> {
         io::Error::new(io::ErrorKind::Other, self.to_string())
     }
 }
+
+pub type SafeError = Box<dyn std::error::Error + Send + Sync>;

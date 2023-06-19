@@ -1,3 +1,5 @@
+use error::SafeError;
+
 mod api;
 mod config;
 mod error;
@@ -7,10 +9,8 @@ mod persistence;
 mod scrappers;
 mod texts;
 
-use std::error::Error;
-
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), SafeError> {
     log::init()?;
 
     let _app = api::init().await?;

@@ -1,9 +1,11 @@
-use std::{env::VarError, error::Error};
+use std::{env::VarError};
 
 use anyhow::Context;
 use once_cell::sync::OnceCell;
 
 use strum::Display;
+
+use crate::error::SafeError;
 
 static ENV_LOADED: OnceCell<bool> = OnceCell::new();
 
@@ -18,7 +20,7 @@ pub enum EnvVar {
 pub struct Config;
 
 impl Config {
-    pub fn get(self, var: EnvVar) -> Result<String, Box<dyn Error + Send + Sync>> {
+    pub fn get(self, var: EnvVar) -> Result<String, SafeError> {
         if !(*ENV_LOADED.get_or_init(|| false)) {
             dotenv::dotenv()
                 .with_context(|| "Failed to load .env file")
@@ -35,16 +37,13 @@ impl Config {
         }
     }
 
-    pub fn get_i32(self, var: EnvVar) -> Result<i32, Box<dyn Error>> {
-        let str = self.get(var);
+    pub fn get_i32(self, var: EnvVar) -> Result<i32, SafeError> {
+        return match self.get(var) {
+            Ok(value) => value
+                .parse()
+                .map_err(|_e| format!("Failed to parse env var {var} to i32").into()),
 
-        if str.is_err() {
-            return Err(str.unwrap_err());
-        }
-
-        let str = str.unwrap();
-
-        str.parse::<i32>()
-            .map_err(|_e| format!("Failed to parse env var {var} to i32").into())
+            Err(e) => Err(e),
+        };
     }
 }

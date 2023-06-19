@@ -1,7 +1,6 @@
 use std::{error::Error, io};
 
 use async_trait::async_trait;
-use futures::TryFutureExt;
 use mongodb::bson::Document;
 use nameof::name_of;
 use springtime_di::{component_alias, injectable, Component};
@@ -62,7 +61,7 @@ impl VerseService for Service {
             .await
             .map_err(|e| e.to_io())?
             .find_one(Into::<Document>::into(filters), None)
-            .map_err(|e| e.to_io())
-            .await;
+            .await
+            .map_err(|e| e.to_io());
     }
 }
