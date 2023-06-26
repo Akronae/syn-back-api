@@ -179,10 +179,7 @@ fn parse_word(
     Ok(Word {
         text: greek.to_owned(),
         language: Language::Greek,
-        translation: HashMap::from([
-            (Language::English, english.to_string()),
-            (Language::Greek, greek.to_string()),
-        ]),
+        translation: HashMap::from([(Language::English, english.to_string())]),
         declension,
     })
 }

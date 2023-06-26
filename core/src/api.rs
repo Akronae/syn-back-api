@@ -1,59 +1,31 @@
-use futures::{future::BoxFuture, FutureExt};
-use springtime::application::{self, Application};
-use springtime_di::{
-    component_alias, factory::ComponentFactory, instance_provider::ErrorPtr, Component,
+use actix_web::{
+    web::{self},
+    App, HttpServer,
 };
-use springtime_web_axum::config::{
-    ServerConfig, WebConfig, WebConfigProvider, DEFAULT_SERVER_NAME,
-};
+
+use tracing_actix_web::TracingLogger;
+
+mod verse;
 
 use crate::{
+    api::verse::verse_controller,
     config::{Config, EnvVar},
-    error::SafeError,
+    error::MapToIoError,
 };
 
-use tracing::info;
+pub async fn init() -> std::io::Result<()> {
+    let port = Config.get(EnvVar::Port).map_err_to_io()?;
 
-pub mod verse;
+    tracing::info!(
+        address = format!("http://localhost:{}", port),
+        "API listening on"
+    );
 
-#[derive(Component)]
-#[component(constructor = "MyWebConfigProvider::new")]
-struct MyWebConfigProvider {
-    #[component(ignore)]
-    config: WebConfig,
-}
-
-impl MyWebConfigProvider {
-    fn new() -> BoxFuture<'static, Result<Self, ErrorPtr>> {
-        async {
-            let mut web_config = WebConfig::default();
-            let mut server_config = ServerConfig::default();
-
-            server_config.listen_address =
-                format!("127.0.0.1:{}", Config.get_i32(EnvVar::Port).unwrap());
-
-            info!(addr = server_config.listen_address, "listening");
-
-            web_config
-                .servers
-                .insert(DEFAULT_SERVER_NAME.to_string(), server_config);
-
-            Ok(Self { config: web_config })
-        }
-        .boxed()
-    }
-}
-
-#[component_alias]
-impl WebConfigProvider for MyWebConfigProvider {
-    fn config(&self) -> BoxFuture<'_, Result<&WebConfig, ErrorPtr>> {
-        async { Ok(&self.config) }.boxed()
-    }
-}
-
-pub async fn init() -> Result<Application<ComponentFactory>, SafeError> {
-    let mut app = application::create_default()?;
-    app.run().await?;
-
-    Ok(app)
+    HttpServer::new(|| {
+        let routes = web::scope("v1").configure(verse_controller::configure);
+        App::new().wrap(TracingLogger::default()).service(routes)
+    })
+    .bind(("127.0.0.1", port))?
+    .run()
+    .await
 }

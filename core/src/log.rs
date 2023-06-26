@@ -9,10 +9,10 @@ fn get_rust_log() -> String {
 pub fn get_subscriber() -> impl tracing::Subscriber {
     tracing_subscriber::fmt()
         .compact()
-        .with_file(true)
+        .with_file(false)
         .with_line_number(true)
         .with_thread_ids(false)
-        .with_thread_names(true)
+        .with_thread_names(false)
         .with_target(false)
         .with_env_filter(get_rust_log())
         .finish()

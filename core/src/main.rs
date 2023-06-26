@@ -13,7 +13,7 @@ mod texts;
 async fn main() -> Result<(), SafeError> {
     log::init()?;
 
-    let _app = api::init().await?;
+    api::init().await?;
 
     Ok(())
 }

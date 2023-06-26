@@ -1,19 +1,16 @@
-use std::{error::Error, io};
+use std::io;
 
-use async_trait::async_trait;
-use mongodb::bson::Document;
+use mongodb::{bson::Document, Collection};
 use nameof::name_of;
-use springtime_di::{component_alias, injectable, Component};
 
-use crate::{error::ToIoError, grammar::Verse, persistence::get_db};
+use crate::{
+    error::{SafeError, ToIoError},
+    grammar::Verse,
+    persistence::get_db,
+};
 
-#[derive(Debug, Default)]
-pub struct VerseFilter {
-    pub collection: Option<String>,
-    pub book: Option<String>,
-    pub chapter_number: Option<i32>,
-    pub verse_number: Option<i32>,
-}
+use super::verse_model::VerseFilter;
+
 impl From<VerseFilter> for Document {
     fn from(value: VerseFilter) -> Self {
         let mut doc = Document::new();
@@ -35,33 +32,19 @@ impl From<VerseFilter> for Document {
     }
 }
 
-#[injectable]
-#[async_trait]
-pub trait VerseService {
-    async fn find_one(&self, filters: VerseFilter) -> io::Result<Option<Verse>>;
-}
+pub struct VerseService;
 
-#[derive(Component)]
-struct Service;
-
-impl Service {
-    async fn get_collection(
-        &self,
-    ) -> Result<mongodb::Collection<Verse>, Box<dyn Error + Send + Sync>> {
+impl VerseService {
+    async fn get_collection(&self) -> Result<Collection<Verse>, Box<SafeError>> {
         Ok(get_db().await?.collection::<Verse>("verses"))
     }
-}
 
-#[component_alias]
-#[async_trait]
-impl VerseService for Service {
-    async fn find_one(&self, filters: VerseFilter) -> io::Result<Option<Verse>> {
-        return self
-            .get_collection()
+    pub async fn find_one(&self, filters: VerseFilter) -> io::Result<Option<Verse>> {
+        self.get_collection()
             .await
             .map_err(|e| e.to_io())?
             .find_one(Into::<Document>::into(filters), None)
             .await
-            .map_err(|e| e.to_io());
+            .map_err(|e| e.to_io())
     }
 }

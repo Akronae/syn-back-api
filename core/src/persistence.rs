@@ -10,7 +10,7 @@ use crate::{
 static DB: OnceCell<Database> = OnceCell::new();
 pub async fn get_db() -> Result<Database, SafeError> {
     if DB.get().is_none() {
-        let mut client_options = ClientOptions::parse(Config.get(EnvVar::MongoUri)?)
+        let mut client_options = ClientOptions::parse(Config.get::<String>(EnvVar::MongoUri)?)
             .await
             .with_context(|| "Failed to parse MongoDB URI")?;
 

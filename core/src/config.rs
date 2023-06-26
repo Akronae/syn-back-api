@@ -1,4 +1,4 @@
-use std::{env::VarError};
+use std::{env::VarError, str::FromStr};
 
 use anyhow::Context;
 use once_cell::sync::OnceCell;
@@ -20,7 +20,7 @@ pub enum EnvVar {
 pub struct Config;
 
 impl Config {
-    pub fn get(self, var: EnvVar) -> Result<String, SafeError> {
+    pub fn get<T: FromStr>(self, var: EnvVar) -> Result<T, SafeError> {
         if !(*ENV_LOADED.get_or_init(|| false)) {
             dotenv::dotenv()
                 .with_context(|| "Failed to load .env file")
@@ -30,20 +30,13 @@ impl Config {
         let res = std::env::var(var.to_string());
 
         match res {
-            Ok(value) => Ok(value),
+            Ok(value) => match value.parse::<T>() {
+                Ok(value) => Ok(value),
+                Err(_) => Err(format!("Failed to parse env var {var}").into()),
+            },
             Err(VarError::NotPresent) | Err(VarError::NotUnicode(_)) => {
                 Err(format!("Failed to get env var {var}").into())
             }
         }
-    }
-
-    pub fn get_i32(self, var: EnvVar) -> Result<i32, SafeError> {
-        return match self.get(var) {
-            Ok(value) => value
-                .parse()
-                .map_err(|_e| format!("Failed to parse env var {var} to i32").into()),
-
-            Err(e) => Err(e),
-        };
     }
 }
