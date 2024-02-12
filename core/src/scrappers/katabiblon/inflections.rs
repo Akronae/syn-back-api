@@ -1,50 +1,17 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
 use strum::Display;
 use tracing::debug;
 use url::Url;
 
-use crate::error::SafeError;
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct WordInflection {
-    pub noun: Option<NounInflectionDeclensions>,
-}
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct NounInflectionDeclensions {
-    pub first_declension: Option<NounInflectionGenders>,
-    pub second_declension: Option<NounInflectionGenders>,
-    pub third_declension: Option<NounInflectionGenders>,
-}
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct NounInflectionGenders {
-    pub masculine: Option<NounInflectionNumbers>,
-    pub feminine: Option<NounInflectionNumbers>,
-    pub neuter: Option<NounInflectionNumbers>,
-}
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct NounInflectionNumbers {
-    pub singular: Option<NounInflectionCases>,
-    pub plural: Option<NounInflectionCases>,
-}
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct NounInflectionCases {
-    pub nominative: Option<NounInflectionForm>,
-    pub genitive: Option<NounInflectionForm>,
-    pub dative: Option<NounInflectionForm>,
-    pub accusative: Option<NounInflectionForm>,
-    pub vocative: Option<NounInflectionForm>,
-}
-
-#[derive(Default, Debug, Clone, Hash)]
-pub struct NounInflectionForm {
-    pub contracted: String,
-    pub uncontracted: String,
-}
+use crate::{
+    api::lexicon::lexicon_model::{
+        NounInflectionCases, NounInflectionDeclensions, NounInflectionForm, NounInflectionGenders,
+        NounInflectionNumbers, WordInflection,
+    },
+    error::SafeError,
+};
 
 #[derive(Debug, Clone, Display)]
 enum CellType {

@@ -1,34 +1,19 @@
-
-
-
-
-
-use tracing::{*};
-
+use mongodb::bson::de;
+use serde::Serialize;
+use tracing::*;
 
 use crate::{
+    api::lexicon::lexicon_model::LexiconEntry,
     error::SafeError,
-    grammar::{
-        Declension,
-    },
-    scrappers::{
-        katabiblon::{details::search_word_details, inflections::extract_inflections},
-    },
+    grammar::Declension,
+    scrappers::katabiblon::{details::search_word_details, inflections::extract_inflections},
 };
-
-use super::{details::WordDetails, inflections::WordInflection};
-
-#[derive(Debug)]
-pub struct ParsingResult {
-    pub details: WordDetails,
-    pub inflections: Vec<WordInflection>,
-}
 
 #[allow(dead_code)]
 pub async fn parse_word(
     greek_word: &str,
     declension: &Declension,
-) -> Result<ParsingResult, SafeError> {
+) -> Result<LexiconEntry, SafeError> {
     info!("Parsing word {}", greek_word);
 
     let details = search_word_details(greek_word, declension).await?;
@@ -37,8 +22,10 @@ pub async fn parse_word(
     let inflections = extract_inflections(&details.inflection_lemma).await?;
     dbg!(inflections.clone());
 
-    Ok(ParsingResult {
-        details,
+    Ok(LexiconEntry {
+        lemma: details.lemma,
+        description: details.description,
+        translation: details.translation,
         inflections,
     })
 }

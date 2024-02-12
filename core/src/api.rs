@@ -1,5 +1,3 @@
-
-
 use actix_cors::Cors;
 
 use actix_web::{
@@ -7,15 +5,18 @@ use actix_web::{
     App, HttpServer,
 };
 
-
 use tracing_actix_web::TracingLogger;
 
-mod verse;
+pub mod lexicon;
+pub mod verse;
 
 use crate::{
-    api::verse::verse_controller,
+    api::{
+        lexicon::{lexicon_controller, lexicon_repo},
+        verse::{verse_controller, verse_repo},
+    },
     config::{Config, EnvVar},
-    error::{MapErrIo},
+    error::{MapErrIo, MapErrSafe, SafeError},
 };
 
 pub fn cors() -> Cors {
@@ -25,7 +26,7 @@ pub fn cors() -> Cors {
         .allow_any_origin()
 }
 
-pub async fn init() -> std::io::Result<()> {
+pub async fn init() -> Result<(), SafeError> {
     let port = Config.get(EnvVar::Port).map_err_io()?;
 
     tracing::info!(
@@ -33,8 +34,14 @@ pub async fn init() -> std::io::Result<()> {
         "API listening on"
     );
 
+    verse_repo::configure().await?;
+    lexicon_repo::configure().await?;
+
     HttpServer::new(|| {
-        let routes = web::scope("v1").configure(verse_controller::configure);
+        let routes = web::scope("v1")
+            .configure(verse_controller::configure)
+            .configure(lexicon_controller::configure);
+
         App::new()
             .wrap(TracingLogger::default())
             .wrap(cors())
@@ -43,4 +50,5 @@ pub async fn init() -> std::io::Result<()> {
     .bind(("127.0.0.1", port))?
     .run()
     .await
+    .map_err_safe()
 }

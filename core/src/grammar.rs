@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use strum::Display;
@@ -166,6 +166,7 @@ pub enum DeclensionType {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[serde_with::skip_serializing_none]
 pub struct Declension {
     pub part_of_speech: PartOfSpeech,
     pub mood: Option<Mood>,

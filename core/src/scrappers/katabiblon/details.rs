@@ -1,6 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use anyhow::Context;
+use serde::Serialize;
 use tracing::debug;
 use url::Url;
 
@@ -19,10 +20,9 @@ struct ParsingOption {
     inflection_lemma: String,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
 pub struct WordDetails {
     pub lemma: Vec<String>,
-    pub group: String,
     pub translation: String,
     pub description: String,
     pub inflection_lemma: String,
@@ -46,7 +46,6 @@ pub async fn search_word_details(
         .map(|(opt, _)| opt)
         .unwrap();
 
-    
     extract_details(
         greek_word,
         matching_opt.opt_index,
@@ -69,7 +68,8 @@ async fn extract_details(
 
     let title_str = dom
         .query_selector("h2[lang='el']")
-        .unwrap().next()
+        .unwrap()
+        .next()
         .unwrap()
         .get(parser)
         .unwrap()
@@ -78,7 +78,8 @@ async fn extract_details(
 
     let translation_bytes = dom
         .query_selector("input[name='user-definition-basic']")
-        .unwrap().next()
+        .unwrap()
+        .next()
         .unwrap()
         .get(parser)
         .unwrap()
@@ -92,7 +93,8 @@ async fn extract_details(
 
     let desc = dom
         .query_selector("textarea[name='user-definition-long']")
-        .unwrap().next()
+        .unwrap()
+        .next()
         .unwrap()
         .get(parser)
         .unwrap()
@@ -101,12 +103,12 @@ async fn extract_details(
         .inner_text(parser);
 
     return Ok(WordDetails {
-        lemma: infos.first()
+        lemma: infos
+            .first()
             .unwrap()
             .split('/')
             .map(|x| x.trim().to_string())
             .collect::<Vec<String>>(),
-        group: infos.get(1).unwrap().replace('-', "").trim().to_string(),
         translation: translation.to_string().decode_html(),
         description: desc.to_string().decode_html(),
         inflection_lemma: inflection_lemma.to_string(),
@@ -188,14 +190,16 @@ async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
 
     let table_html = dom
         .query_selector("#content")
-        .unwrap().next()
+        .unwrap()
+        .next()
         .unwrap()
         .get(parser)
         .unwrap()
         .as_tag()
         .unwrap()
         .query_selector(parser, "table")
-        .context("Could not find table")?.next()
+        .context("Could not find table")?
+        .next()
         .unwrap()
         .get(parser)
         .unwrap()

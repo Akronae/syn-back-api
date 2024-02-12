@@ -1,6 +1,6 @@
 use crate::{
     api::verse::verse_model::VerseFilter,
-    error::{MapErrActix},
+    error::MapErrActix,
     texts::{Book, Collection},
 };
 
@@ -13,8 +13,7 @@ use actix_web::{
 };
 use anyhow::Context;
 
-use serde::{Deserialize};
-
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 struct GetVerseParams {
@@ -55,6 +54,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::scope("verses")
             .service(get_verse)
             .service(get_manifest)
-            .app_data(web::Data::new(VerseService {})),
+            .app_data(web::Data::new(VerseService::new())),
     );
 }
