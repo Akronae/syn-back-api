@@ -46,13 +46,13 @@ pub async fn search_word_details(
         .map(|(opt, _)| opt)
         .unwrap();
 
-    let details = extract_details(
+    
+    extract_details(
         greek_word,
         matching_opt.opt_index,
         &matching_opt.inflection_lemma,
     )
-    .await;
-    return details;
+    .await
 }
 
 async fn extract_details(
@@ -69,18 +69,16 @@ async fn extract_details(
 
     let title_str = dom
         .query_selector("h2[lang='el']")
-        .unwrap()
-        .nth(0)
+        .unwrap().next()
         .unwrap()
         .get(parser)
         .unwrap()
         .inner_text(parser);
-    let infos = title_str.trim().split(",").collect::<Vec<&str>>();
+    let infos = title_str.trim().split(',').collect::<Vec<&str>>();
 
     let translation_bytes = dom
         .query_selector("input[name='user-definition-basic']")
-        .unwrap()
-        .nth(0)
+        .unwrap().next()
         .unwrap()
         .get(parser)
         .unwrap()
@@ -94,8 +92,7 @@ async fn extract_details(
 
     let desc = dom
         .query_selector("textarea[name='user-definition-long']")
-        .unwrap()
-        .nth(0)
+        .unwrap().next()
         .unwrap()
         .get(parser)
         .unwrap()
@@ -104,13 +101,12 @@ async fn extract_details(
         .inner_text(parser);
 
     return Ok(WordDetails {
-        lemma: infos
-            .get(0)
+        lemma: infos.first()
             .unwrap()
-            .split("/")
+            .split('/')
             .map(|x| x.trim().to_string())
             .collect::<Vec<String>>(),
-        group: infos.get(1).unwrap().replace("-", "").trim().to_string(),
+        group: infos.get(1).unwrap().replace('-', "").trim().to_string(),
         translation: translation.to_string().decode_html(),
         description: desc.to_string().decode_html(),
         inflection_lemma: inflection_lemma.to_string(),
@@ -126,11 +122,11 @@ fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i
         Some(&"nom") => Some(Case::Nominative),
         _ => None,
     };
-    let gender = match parsing_comps.get(0) {
+    let gender = match parsing_comps.first() {
         Some(&"(fem)") => Some(Gender::Feminine),
         _ => None,
     };
-    let mood = match parsing_comps.get(0) {
+    let mood = match parsing_comps.first() {
         _ => None,
     };
     let number = match parsing_comps.get(2) {
@@ -138,16 +134,16 @@ fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i
         _ => None,
     };
     let part_of_speech = PartOfSpeech::Noun(Noun::Common);
-    let person = match parsing_comps.get(0) {
+    let person = match parsing_comps.first() {
         _ => None,
     };
-    let tense = match parsing_comps.get(0) {
+    let tense = match parsing_comps.first() {
         _ => None,
     };
-    let theme = match parsing_comps.get(0) {
+    let theme = match parsing_comps.first() {
         _ => None,
     };
-    let voice = match parsing_comps.get(0) {
+    let voice = match parsing_comps.first() {
         _ => None,
     };
 
@@ -179,7 +175,7 @@ fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i
         score += 1;
     }
 
-    return score;
+    score
 }
 
 async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
@@ -192,16 +188,14 @@ async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
 
     let table_html = dom
         .query_selector("#content")
-        .unwrap()
-        .nth(0)
+        .unwrap().next()
         .unwrap()
         .get(parser)
         .unwrap()
         .as_tag()
         .unwrap()
         .query_selector(parser, "table")
-        .context("Could not find table")?
-        .nth(0)
+        .context("Could not find table")?.next()
         .unwrap()
         .get(parser)
         .unwrap()

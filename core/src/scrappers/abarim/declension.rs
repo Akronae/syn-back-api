@@ -1,4 +1,4 @@
-use std::ops::Index;
+
 
 use crate::{
     grammar::{
@@ -38,8 +38,7 @@ pub fn get_word_fix(
 }
 
 pub fn get_word_declension(comps: &Vec<String>) -> Declension {
-    let comp_0_opt = comps
-        .get(0)
+    let comp_0_opt = comps.first()
         .map(|s| {
             s.to_lowercase()[..s.find("+kai").unwrap_or(s.len())]
                 .trim()

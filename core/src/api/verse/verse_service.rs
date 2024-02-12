@@ -1,14 +1,14 @@
-use std::{collections::HashMap, io};
+
 
 use mongodb::{bson::Document, Collection};
 use nameof::name_of;
 use serde::Serialize;
 
 use crate::{
-    error::{MapErrSafe, MapIntoErr, SafeError},
+    error::{MapErrSafe, SafeError},
     grammar::Verse,
     persistence::get_db,
-    utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
+    utils::str::{camel_case::CamelCase},
 };
 
 use super::verse_model::VerseFilter;
@@ -30,7 +30,7 @@ impl From<VerseFilter> for Option<Document> {
             doc.insert(name_of!(verse_number).camel_case(), verse_number);
         }
 
-        return Some(doc);
+        Some(doc)
     }
 }
 
@@ -73,7 +73,7 @@ impl VerseService {
     }
 
     pub async fn get_manifest() -> Result<Manifest, SafeError> {
-        return Ok(Manifest {
+        Ok(Manifest {
             collections: Vec::<ManifestCollection>::from([ManifestCollection {
                 name: "new_testament".to_owned(),
                 books: Vec::<ManifestBook>::from([ManifestBook {
@@ -194,6 +194,6 @@ impl VerseService {
                     ]),
                 }]),
             }]),
-        });
+        })
     }
 }

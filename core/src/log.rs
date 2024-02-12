@@ -3,7 +3,7 @@ use tracing::subscriber::SetGlobalDefaultError;
 use crate::config::{Config, EnvVar};
 
 fn get_rust_log() -> String {
-    return Config.get(EnvVar::RustLog).unwrap_or("".into());
+    Config.get(EnvVar::RustLog).unwrap_or("".into())
 }
 
 pub fn get_subscriber() -> impl tracing::Subscriber {

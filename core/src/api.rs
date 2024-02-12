@@ -1,14 +1,13 @@
-use std::io;
+
 
 use actix_cors::Cors;
-use actix_files::NamedFile;
+
 use actix_web::{
-    http,
     web::{self},
-    App, HttpRequest, HttpServer,
+    App, HttpServer,
 };
 
-use paperclip::actix::OpenApiExt;
+
 use tracing_actix_web::TracingLogger;
 
 mod verse;
@@ -16,14 +15,14 @@ mod verse;
 use crate::{
     api::verse::verse_controller,
     config::{Config, EnvVar},
-    error::{MapErrIo, MapIntoErr},
+    error::{MapErrIo},
 };
 
 pub fn cors() -> Cors {
-    return Cors::default()
+    Cors::default()
         .allow_any_header()
         .allow_any_method()
-        .allow_any_origin();
+        .allow_any_origin()
 }
 
 pub async fn init() -> std::io::Result<()> {

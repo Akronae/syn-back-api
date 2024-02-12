@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use strum::{Display, EnumString};
+use strum::{Display};
 
 #[derive(Debug, PartialEq, Clone, Copy, Deserialize, Display, Serialize)]
 #[strum(serialize_all = "snake_case")]

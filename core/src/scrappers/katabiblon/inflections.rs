@@ -41,7 +41,7 @@ pub struct NounInflectionCases {
 }
 
 #[derive(Default, Debug, Clone, Hash)]
-struct NounInflectionForm {
+pub struct NounInflectionForm {
     pub contracted: String,
     pub uncontracted: String,
 }
@@ -67,7 +67,7 @@ pub async fn extract_inflections(lemma: &str) -> Result<Vec<WordInflection>, Saf
         word_inflections.push(inflection);
     }
 
-    return Ok(word_inflections);
+    Ok(word_inflections)
 }
 
 async fn extract_inflection_tables(lemma: &str) -> Result<Vec<Vec<Cell>>, SafeError> {
@@ -127,7 +127,7 @@ async fn extract_inflection_tables(lemma: &str) -> Result<Vec<Vec<Cell>>, SafeEr
                 };
                 let tag = std::str::from_utf8(row_cell.name().as_bytes())?;
                 let t = row_cell.inner_text(tr_parser);
-                let text = t.split("[").nth(0).unwrap().trim();
+                let text = t.split('[').next().unwrap().trim();
                 let node_type = match tag {
                     "th" => CellType::Header,
                     "td" => CellType::Data,
@@ -146,8 +146,8 @@ async fn extract_inflection_tables(lemma: &str) -> Result<Vec<Vec<Cell>>, SafeEr
                         cells.push(Cell {
                             data: text.to_string(),
                             cell_type: node_type.to_owned(),
-                            x: x,
-                            y: y,
+                            x,
+                            y,
                         });
                     }
                 }
@@ -159,7 +159,7 @@ async fn extract_inflection_tables(lemma: &str) -> Result<Vec<Vec<Cell>>, SafeEr
         res.push(cells);
     }
 
-    return Ok(res);
+    Ok(res)
 }
 
 fn get_inflect_url(lemma: &str) -> Result<String, SafeError> {
@@ -171,18 +171,16 @@ fn get_inflect_url(lemma: &str) -> Result<String, SafeError> {
     Ok(url.to_string())
 }
 
-async fn cells_to_word_inflection(cells: &Vec<Cell>) -> Result<WordInflection, SafeError> {
+async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, SafeError> {
     let mut inflections = HashMap::<Vec<String>, String>::new();
 
-    for cell in cells.clone() {
+    for cell in cells {
         if matches!(cell.cell_type, CellType::Data) {
             let mut headers = Vec::<String>::new();
 
-            for c in cells.clone() {
-                if matches!(c.cell_type, CellType::Header) {
-                    if c.y == cell.y || c.x == cell.x {
-                        headers.push(c.clone().data);
-                    }
+            for c in cells {
+                if matches!(c.cell_type, CellType::Header) && (c.y == cell.y || c.x == cell.x) {
+                    headers.push(c.clone().data);
                 }
             }
 
@@ -249,7 +247,7 @@ async fn cells_to_word_inflection(cells: &Vec<Cell>) -> Result<WordInflection, S
             }
             let number = number_opt.unwrap();
 
-            let mut gram_case = None;
+            let gram_case;
             if parsing.contains(&"Gen".to_string()) {
                 if number.genitive.is_none() {
                     number.genitive = Some(NounInflectionForm::default());
@@ -287,5 +285,5 @@ async fn cells_to_word_inflection(cells: &Vec<Cell>) -> Result<WordInflection, S
         }
     }
 
-    return Ok(infl);
+    Ok(infl)
 }

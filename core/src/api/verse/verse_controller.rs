@@ -1,7 +1,6 @@
 use crate::{
     api::verse::verse_model::VerseFilter,
-    error::{MapErrActix, MapIntoErr, SafeError},
-    grammar::Verse,
+    error::{MapErrActix},
     texts::{Book, Collection},
 };
 
@@ -9,13 +8,13 @@ use super::verse_service::VerseService;
 
 use actix_web::{
     get,
-    web::{self, Data, Json, Path},
+    web::{self, Data, Path},
     Responder,
 };
 use anyhow::Context;
-use paperclip::actix::{api_v2_operation, Apiv2Schema};
-use serde::{Deserialize, Serialize};
-use strum::Display;
+
+use serde::{Deserialize};
+
 
 #[derive(Deserialize, Debug)]
 struct GetVerseParams {

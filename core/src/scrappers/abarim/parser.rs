@@ -1,6 +1,6 @@
 use anyhow::Context;
-use std::{collections::HashMap, error::Error, str::FromStr};
-use tracing::{field::debug, *};
+use std::{collections::HashMap, error::Error};
+use tracing::{*};
 
 use crate::{
     error::SafeError,
@@ -111,10 +111,10 @@ fn parse_verse(
     }
 
     Ok(Verse {
-        collection: collection,
-        book: book,
-        chapter_number: chapter_number,
-        verse_number: verse_number,
+        collection,
+        book,
+        chapter_number,
+        verse_number,
         translation: HashMap::from([(Language::English.lang_code(), trans)]),
         words: parsed_words,
     })
