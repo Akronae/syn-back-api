@@ -1,12 +1,10 @@
-use mongodb::{bson::Document, Collection};
-use nameof::name_of;
+
+
 use serde::Serialize;
 
 use crate::{
-    error::{MapErrSafe, SafeError},
+    error::{SafeError},
     grammar::Verse,
-    persistence::get_db,
-    utils::str::camel_case::CamelCase,
 };
 
 use super::{verse_model::VerseFilter, verse_repo::VerseRepo};
@@ -44,7 +42,7 @@ impl VerseService {
     }
 
     pub async fn find_one(&self, filter: VerseFilter) -> Result<Option<Verse>, SafeError> {
-        return self.repo.find_one(filter).await;
+        self.repo.find_one(filter).await
     }
 
     pub async fn get_manifest() -> Result<Manifest, SafeError> {

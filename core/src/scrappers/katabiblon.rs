@@ -11,9 +11,7 @@ use crate::{
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
-    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech, Word},
     persistence,
-    texts::Book,
 };
 
 #[allow(dead_code)]
@@ -35,7 +33,7 @@ pub async fn import() -> Result<(), SafeError> {
         let parsed = parser::parse_word(&word.text, &word.declension).await?;
         let parsed_lemma = parsed.lemma.first().unwrap().to_string();
 
-        if parsed_lemma.to_owned() != word.text {
+        if parsed_lemma != word.text {
             word.text = parsed_lemma.to_owned();
         }
 

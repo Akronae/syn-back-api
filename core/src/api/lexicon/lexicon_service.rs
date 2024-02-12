@@ -1,11 +1,9 @@
-use mongodb::{bson::Document, Collection};
-use nameof::name_of;
-use serde::Serialize;
+
+
+
 
 use crate::{
-    error::{MapErrSafe, SafeError},
-    persistence::get_db,
-    utils::str::camel_case::CamelCase,
+    error::{SafeError},
 };
 
 use super::{
@@ -25,6 +23,6 @@ impl LexiconService {
     }
 
     pub async fn find_one(&self, filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
-        return self.repo.find_one(filter).await;
+        self.repo.find_one(filter).await
     }
 }

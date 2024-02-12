@@ -4,7 +4,7 @@ use mongodb::{
     Collection, IndexModel,
 };
 use nameof::name_of;
-use serde::Serialize;
+
 
 use crate::{
     error::{MapErrSafe, SafeError},

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::Serialize;
+
 use strum::Display;
 use tracing::debug;
 use url::Url;

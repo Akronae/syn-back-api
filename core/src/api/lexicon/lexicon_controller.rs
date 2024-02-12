@@ -1,10 +1,9 @@
 use crate::{
     api::lexicon::lexicon_model::LexiconFilter,
     error::MapErrActix,
-    texts::{Book, Collection},
 };
 
-use super::{lexicon_repo::LexiconRepo, lexicon_service::LexiconService};
+use super::{lexicon_service::LexiconService};
 
 use actix_web::{
     get,
@@ -13,7 +12,7 @@ use actix_web::{
 };
 use anyhow::Context;
 
-use serde::Deserialize;
+
 
 #[get("/{lemma}")]
 async fn get_lexicon(
