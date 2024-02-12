@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>syn-text-</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
+      rel="stylesheet"
+    />
+
+    <!--
+    Redoc doesn't change outer page styles
+    -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+    <div id="redoc-container"></div>
+    <script type="text/javascript">
+      (function () {
+        Redoc.init(
+          "http://localhost:8000/spec",
+          {
+            theme: {
+              colors: {
+                text: {
+                  primary: "rgba(247, 240, 240, 1)",
+                  secondary: "rgba(190, 188, 188, 1)",
+                },
+                border: {
+                  dark: "rgba(245, 240, 240, 0.1)",
+                  light: "rgba(250, 243, 243, 1)",
+                },
+              },
+              schema: {
+                nestedBackground: "rgba(240, 235, 235, 1)",
+              },
+              menu: {
+                backgroundColor: "rgba(46, 45, 45, 1)",
+                textColor: "rgba(247, 243, 243, 1)",
+                arrow: {
+                  color: "rgba(240, 237, 237, 1)",
+                },
+              },
+            },
+          },
+          document.getElementById("redoc-container")
+        );
+      })();
+    </script>
+  </body>
+</html>

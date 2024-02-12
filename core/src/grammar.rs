@@ -5,13 +5,11 @@ use strum::Display;
 
 use crate::texts::{Book, Collection};
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 pub enum PartOfSpeech {
-    Noun(Noun),
-    Pronoun(Pronoun),
     Verb,
     Adjective,
     Adverb,
@@ -20,42 +18,58 @@ pub enum PartOfSpeech {
     Interjection,
     Participle,
     Numeral,
-    Article(Article),
     Determiner,
+    #[serde(untagged)]
+    Noun(Noun),
+    #[serde(untagged)]
+    Pronoun(Pronoun),
+    #[serde(untagged)]
+    Article(Article),
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Noun {
+    #[serde(rename = "noun_common")]
     Common,
+    #[serde(rename = "noun_proper")]
     Proper,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 pub enum Pronoun {
+    #[serde(rename = "pronoun_relative")]
     Relative,
+    #[serde(rename = "pronoun_interrogative")]
     Interrogative,
+    #[serde(rename = "pronoun_indefinite")]
     Indefinite,
+    #[serde(rename = "pronoun_reciprocal")]
     Reciprocal,
+    #[serde(rename = "pronoun_reflexive")]
     Reflexive,
+    #[serde(rename = "pronoun_demonstrative")]
     Demonstrative,
+    #[serde(rename = "pronoun_personal")]
     Personal,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
 pub enum Article {
+    #[serde(rename = "article_definite")]
     Definite,
+    #[serde(rename = "article_indefinite")]
     Indefinite,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Gender {
@@ -64,7 +78,7 @@ pub enum Gender {
     Neuter,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Number {
@@ -72,7 +86,7 @@ pub enum Number {
     Plural,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Person {
@@ -81,7 +95,7 @@ pub enum Person {
     Third,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
@@ -94,7 +108,7 @@ pub enum Case {
     Indeclinable,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Voice {
@@ -103,7 +117,7 @@ pub enum Voice {
     Passive,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Mood {
@@ -115,7 +129,7 @@ pub enum Mood {
     Participle,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum Tense {
@@ -129,7 +143,7 @@ pub enum Tense {
     Pluperfect,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[allow(dead_code)]
@@ -138,7 +152,20 @@ pub enum Theme {
     Athematic,
 }
 
+#[derive(
+    Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash, PartialOrd, Eq, Ord,
+)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
+pub enum DeclensionType {
+    First,
+    Second,
+    Third,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Declension {
     pub part_of_speech: PartOfSpeech,
     pub mood: Option<Mood>,
@@ -167,13 +194,15 @@ impl Declension {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum Language {
     Greek,
     English,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize, Display)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum LanguageCode {
@@ -191,6 +220,7 @@ impl Language {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Word {
     pub language: LanguageCode,
     pub text: String,
@@ -199,6 +229,7 @@ pub struct Word {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Verse {
     pub collection: Collection,
     pub book: Book,

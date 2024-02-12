@@ -15,6 +15,7 @@ async fn main() -> Result<(), SafeError> {
     log::init()?;
 
     // scrappers::abarim::import().await?;
+    scrappers::katabiblon::import().await?;
 
     api::init().await?;
 

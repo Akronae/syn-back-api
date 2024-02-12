@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use crate::{
     grammar::{
         Article, Case, Declension, Gender, Mood, Noun, Number, PartOfSpeech, Person, Pronoun,
@@ -38,17 +40,29 @@ pub fn get_word_fix(
 pub fn get_word_declension(comps: &Vec<String>) -> Declension {
     let comp_0_opt = comps
         .get(0)
-        .map(|s| s.to_lowercase())
+        .map(|s| {
+            s.to_lowercase()[..s.find("+kai").unwrap_or(s.len())]
+                .trim()
+                .to_owned()
+        })
         .unwrap_or("".to_string());
     let comp_0 = comp_0_opt.as_str();
     let comp_1_opt = comps
         .get(1)
-        .map(|s| s.to_lowercase())
+        .map(|s| {
+            s.to_lowercase()[..s.find("+kai").unwrap_or(s.len())]
+                .trim()
+                .to_owned()
+        })
         .unwrap_or("".to_string());
     let comp_1 = comp_1_opt.as_str();
     let comp_2_opt = comps
         .get(2)
-        .map(|s| s.to_lowercase())
+        .map(|s| {
+            s.to_lowercase()[..s.find("+kai").unwrap_or(s.len())]
+                .trim()
+                .to_owned()
+        })
         .unwrap_or("".to_string());
     let comp_2 = comp_2_opt.as_str();
 
@@ -67,6 +81,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         "dem pron" => PartOfSpeech::Pronoun(Pronoun::Demonstrative),
         "participle" => PartOfSpeech::Participle,
         "adjective" => PartOfSpeech::Adjective,
+        "adjective (name)" => PartOfSpeech::Adjective,
         "adverb" => PartOfSpeech::Adverb,
         s if s.ends_with("pers pron") => PartOfSpeech::Pronoun(Pronoun::Personal),
         default => panic!("unknown part of speech: {default}"),
@@ -222,7 +237,13 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Conjunction => None,
         _ => match voice_comp {
             s if s.contains(&"act") => Some(Voice::Active),
-            s if s.contains(&"mid") | s.contains(&"mde") => Some(Voice::Middle),
+            s if s.contains(&"mid")
+                | s.contains(&"mde")
+                | s.contains(&"mi/pde")
+                | s.contains(&"mi/pas") =>
+            {
+                Some(Voice::Middle)
+            }
             s if s.contains(&"pas") | s.contains(&"pde") => Some(Voice::Passive),
             _ => panic!(
                 "cannot find voice with comps: {:?} in {:?}",

@@ -24,6 +24,12 @@ impl IntoErr<actix_web::Error> for SafeError {
     }
 }
 
+impl IntoErr<actix_web::Error> for anyhow::Error {
+    fn into_err(self) -> actix_web::Error {
+        actix_web::error::ErrorInternalServerError(self.to_string())
+    }
+}
+
 impl IntoErr<SafeError> for mongodb::error::Error {
     fn into_err(self) -> SafeError {
         Box::new(self)
@@ -60,6 +66,12 @@ pub trait MapErrActix<TRes> {
 }
 
 impl<TRes> MapErrActix<TRes> for Result<TRes, SafeError> {
+    fn map_err_actix(self) -> Result<TRes, actix_web::Error> {
+        self.map_into_err()
+    }
+}
+
+impl<TRes> MapErrActix<TRes> for Result<TRes, anyhow::Error> {
     fn map_err_actix(self) -> Result<TRes, actix_web::Error> {
         self.map_into_err()
     }

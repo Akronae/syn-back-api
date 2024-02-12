@@ -7,18 +7,8 @@ use crate::{
     grammar::{Language, Verse, Word},
     scrappers::abarim::declension,
     texts::{Book, Collection},
-    utils::str::capitalize::Capitalize,
+    utils::str::{capitalize::Capitalize, decode_html::DecodeHtml},
 };
-
-trait DecodeHtml {
-    fn decode_html(&self) -> String;
-}
-
-impl<S: ?Sized + AsRef<str>> DecodeHtml for S {
-    fn decode_html(&self) -> String {
-        return html_escape::decode_html_entities(self).into();
-    }
-}
 
 pub struct ParsedChapter {
     pub verses: Vec<Verse>,
@@ -45,7 +35,14 @@ pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, 
 
     let mut parsed_verses: Vec<Verse> = vec![];
     for (verse_i, _) in verses.enumerate() {
-        let v = parse_verse(collection, book, chapter, verse_i as isize, &dom, parser)?;
+        let v = parse_verse(
+            collection,
+            book,
+            chapter,
+            verse_i as isize + 1,
+            &dom,
+            parser,
+        )?;
         parsed_verses.push(v);
     }
 
@@ -82,16 +79,14 @@ fn parse_verse(
     dom: &tl::VDom,
     parser: &tl::Parser,
 ) -> Result<Verse, Box<dyn Error + Send + Sync>> {
-    let trans = get_verse_translation(verse_number + 1, dom)
+    let trans = get_verse_translation(verse_number, dom)
         .with_context(|| format!("could not find verse {verse_number} translation"))?;
 
-    let a = verse_number + 1;
-
     let words_wrapper = dom
-        .query_selector(&format!("[id*='Byz-AVerse-{a}']"))
+        .query_selector(&format!("[id*='Byz-AVerse-{verse_number}']"))
         .context("could not query selector")?
         .next()
-        .with_context(|| format!("could not find greek word wrapper for verse {a}"))?
+        .with_context(|| format!("could not find greek word wrapper for verse {verse_number}"))?
         .get(parser)
         .context("could not get node")?;
 
