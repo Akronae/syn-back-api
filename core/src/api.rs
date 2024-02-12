@@ -1,3 +1,5 @@
+use std::io;
+
 use actix_web::{
     web::{self},
     App, HttpServer,
@@ -10,11 +12,11 @@ mod verse;
 use crate::{
     api::verse::verse_controller,
     config::{Config, EnvVar},
-    error::MapToIoError,
+    error::{MapErrIo, MapIntoErr},
 };
 
 pub async fn init() -> std::io::Result<()> {
-    let port = Config.get(EnvVar::Port).map_err_to_io()?;
+    let port = Config.get(EnvVar::Port).map_err_io()?;
 
     tracing::info!(
         address = format!("http://localhost:{}", port),

@@ -1,29 +1,76 @@
 use std::io;
 
-pub type SafeError = Box<dyn std::error::Error + Send + Sync>;
+pub type SafeError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
-pub trait ToIoError {
-    fn to_io(self) -> io::Error;
+pub trait IntoErr<T> {
+    fn into_err(self) -> T;
 }
 
-impl ToIoError for mongodb::error::Error {
-    fn to_io(self) -> io::Error {
+impl IntoErr<io::Error> for mongodb::error::Error {
+    fn into_err(self) -> io::Error {
         io::Error::new(io::ErrorKind::Other, self)
     }
 }
 
-impl ToIoError for Box<dyn std::error::Error + Send + Sync> {
-    fn to_io(self) -> io::Error {
+impl IntoErr<io::Error> for SafeError {
+    fn into_err(self) -> io::Error {
         io::Error::new(io::ErrorKind::Other, self.to_string())
     }
 }
 
-pub trait MapToIoError<T> {
-    fn map_err_to_io(self) -> Result<T, io::Error>;
+impl IntoErr<actix_web::Error> for SafeError {
+    fn into_err(self) -> actix_web::Error {
+        actix_web::error::ErrorInternalServerError(self.to_string())
+    }
 }
 
-impl<T> MapToIoError<T> for Result<T, SafeError> {
-    fn map_err_to_io(self) -> Result<T, io::Error> {
-        self.map_err(|e| e.to_io())
+impl IntoErr<SafeError> for mongodb::error::Error {
+    fn into_err(self) -> SafeError {
+        Box::new(self)
+    }
+}
+
+pub trait MapIntoErr<TRes, TErr> {
+    fn map_into_err(self) -> Result<TRes, TErr>;
+}
+
+impl<TRes, TErrFrom, TErrInto> MapIntoErr<TRes, TErrInto> for Result<TRes, TErrFrom>
+where
+    TErrFrom: IntoErr<TErrInto>,
+{
+    fn map_into_err(self) -> Result<TRes, TErrInto> {
+        self.map_err(|e| e.into_err())
+    }
+}
+
+pub trait MapErrIo<TRes> {
+    fn map_err_io(self) -> Result<TRes, io::Error>
+    where
+        Self: Sized;
+}
+
+impl<TRes> MapErrIo<TRes> for Result<TRes, SafeError> {
+    fn map_err_io(self) -> Result<TRes, io::Error> {
+        self.map_into_err()
+    }
+}
+
+pub trait MapErrActix<TRes> {
+    fn map_err_actix(self) -> Result<TRes, actix_web::Error>;
+}
+
+impl<TRes> MapErrActix<TRes> for Result<TRes, SafeError> {
+    fn map_err_actix(self) -> Result<TRes, actix_web::Error> {
+        self.map_into_err()
+    }
+}
+
+pub trait MapErrSafe<TRes> {
+    fn map_err_safe(self) -> Result<TRes, SafeError>;
+}
+
+impl<TRes> MapErrSafe<TRes> for Result<TRes, mongodb::error::Error> {
+    fn map_err_safe(self) -> Result<TRes, SafeError> {
+        self.map_into_err()
     }
 }

@@ -4,7 +4,7 @@ use mongodb::{bson::Document, Collection};
 use nameof::name_of;
 
 use crate::{
-    error::{SafeError, ToIoError},
+    error::{MapErrSafe, MapIntoErr, SafeError},
     grammar::Verse,
     persistence::get_db,
 };
@@ -35,16 +35,15 @@ impl From<VerseFilter> for Document {
 pub struct VerseService;
 
 impl VerseService {
-    async fn get_collection(&self) -> Result<Collection<Verse>, Box<SafeError>> {
+    async fn get_collection(&self) -> Result<Collection<Verse>, SafeError> {
         Ok(get_db().await?.collection::<Verse>("verses"))
     }
 
-    pub async fn find_one(&self, filters: VerseFilter) -> io::Result<Option<Verse>> {
+    pub async fn find_one(&self, filters: VerseFilter) -> Result<Option<Verse>, SafeError> {
         self.get_collection()
-            .await
-            .map_err(|e| e.to_io())?
+            .await?
             .find_one(Into::<Document>::into(filters), None)
             .await
-            .map_err(|e| e.to_io())
+            .map_err_safe()
     }
 }

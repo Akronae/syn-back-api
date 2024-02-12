@@ -1,10 +1,13 @@
 use anyhow::Context;
-use std::{collections::HashMap, error::Error};
+use std::{collections::HashMap, error::Error, str::FromStr};
+use tracing::{field::debug, *};
 
 use crate::{
+    error::SafeError,
     grammar::{Language, Verse, Word},
     scrappers::abarim::declension,
-    texts::Book,
+    texts::{Book, Collection},
+    utils::str::capitalize::Capitalize,
 };
 
 trait DecodeHtml {
@@ -22,13 +25,13 @@ pub struct ParsedChapter {
 }
 
 #[allow(dead_code)]
-pub async fn parse_chapter(
-    chapter: isize,
-    book: Book,
-) -> Result<ParsedChapter, Box<dyn Error + Send + Sync>> {
+pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, SafeError> {
+    info!("Parsing chapter {} of {}", chapter, book);
+
     let base_url = "https://www.abarim-publications.com/Interlinear-New-Testament";
-    let collection = "New Testament";
+    let collection = Collection::NewTestament;
     let full_url = &get_url(base_url, book, chapter);
+    debug!("Fetching {}", full_url);
     let res = reqwest::get(full_url).await?.text().await?;
 
     let dom = tl::parse(res.as_str(), tl::ParserOptions::default())?;
@@ -37,6 +40,8 @@ pub async fn parse_chapter(
     let verses = dom
         .query_selector("[id*='Byz-AVerse']")
         .context("Could not find verses")?;
+
+    debug!("Found {} verses", verses.to_owned().count());
 
     let mut parsed_verses: Vec<Verse> = vec![];
     for (verse_i, _) in verses.enumerate() {
@@ -50,7 +55,10 @@ pub async fn parse_chapter(
 }
 
 fn get_url(base: &str, book: Book, chapter: isize) -> String {
-    format!("{base}/{b}/{b}-{chapter}-parsed.html", b = book.to_string())
+    format!(
+        "{base}/{b}/{b}-{chapter}-parsed.html",
+        b = book.to_string().capitalize()
+    )
 }
 
 fn get_verse_translation(verse_number: isize, dom: &tl::VDom) -> Option<String> {
@@ -67,7 +75,7 @@ fn get_verse_translation(verse_number: isize, dom: &tl::VDom) -> Option<String> 
 }
 
 fn parse_verse(
-    collection: &str,
+    collection: Collection,
     book: Book,
     chapter_number: isize,
     verse_number: isize,
@@ -108,11 +116,11 @@ fn parse_verse(
     }
 
     Ok(Verse {
-        collection: collection.to_string(),
-        book: book.to_string(),
-        chapter_number: chapter_number.to_owned(),
-        verse_number: verse_number.to_owned(),
-        translation: HashMap::from([(Language::English, trans)]),
+        collection: collection,
+        book: book,
+        chapter_number: chapter_number,
+        verse_number: verse_number,
+        translation: HashMap::from([(Language::English.lang_code(), trans)]),
         words: parsed_words,
     })
 }
@@ -178,8 +186,8 @@ fn parse_word(
 
     Ok(Word {
         text: greek.to_owned(),
-        language: Language::Greek,
-        translation: HashMap::from([(Language::English, english.to_string())]),
+        language: Language::Greek.lang_code(),
+        translation: HashMap::from([(Language::English.lang_code(), english.to_string())]),
         declension,
     })
 }

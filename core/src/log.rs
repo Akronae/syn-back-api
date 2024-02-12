@@ -13,6 +13,7 @@ pub fn get_subscriber() -> impl tracing::Subscriber {
         .with_line_number(true)
         .with_thread_ids(false)
         .with_thread_names(false)
+        .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
         .with_target(false)
         .with_env_filter(get_rust_log())
         .finish()
