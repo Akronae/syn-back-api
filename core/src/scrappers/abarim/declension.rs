@@ -1,5 +1,3 @@
-
-
 use crate::{
     grammar::{
         Article, Case, Declension, Gender, Mood, Noun, Number, PartOfSpeech, Person, Pronoun,
@@ -10,9 +8,9 @@ use crate::{
 
 pub fn get_word_fix(
     book: Book,
-    chapter: isize,
-    verse: isize,
-    word: isize,
+    chapter: u8,
+    verse: u8,
+    word: u8,
     greek: &str,
 ) -> Option<Declension> {
     let onar = Some(Declension {
@@ -38,7 +36,8 @@ pub fn get_word_fix(
 }
 
 pub fn get_word_declension(comps: &Vec<String>) -> Declension {
-    let comp_0_opt = comps.first()
+    let comp_0_opt = comps
+        .first()
         .map(|s| {
             s.to_lowercase()[..s.find("+kai").unwrap_or(s.len())]
                 .trim()

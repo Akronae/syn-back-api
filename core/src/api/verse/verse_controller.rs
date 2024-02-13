@@ -19,8 +19,8 @@ use serde::Deserialize;
 struct GetVerseParams {
     collection: Collection,
     book: Book,
-    chapter_number: i32,
-    verse_number: i32,
+    chapter_number: u8,
+    verse_number: u8,
 }
 
 #[get("/manifest")]
@@ -30,21 +30,17 @@ async fn get_manifest() -> actix_web::Result<impl Responder> {
 }
 
 #[get("/{collection}/{book}/{chapter_number}/{verse_number}")]
-async fn get_verse(
-    params: Path<GetVerseParams>,
-    verse_service: Data<VerseService>,
-) -> actix_web::Result<impl Responder> {
-    let verse = verse_service
-        .find_one(VerseFilter {
-            collection: Some(params.collection.to_string()),
-            book: Some(params.book.to_string()),
-            chapter_number: Some(params.chapter_number),
-            verse_number: Some(params.verse_number),
-        })
-        .await
-        .map_err_actix()?
-        .context("no verse found")
-        .map_err_actix()?;
+async fn get_verse(params: Path<GetVerseParams>) -> actix_web::Result<impl Responder> {
+    let verse = VerseService::find_one(&VerseFilter {
+        collection: Some(params.collection.to_string()),
+        book: Some(params.book.to_string()),
+        chapter_number: Some(params.chapter_number),
+        verse_number: Some(params.verse_number),
+    })
+    .await
+    .map_err_actix()?
+    .context("no verse found")
+    .map_err_actix()?;
 
     Ok(web::Json(verse))
 }

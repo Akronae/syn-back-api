@@ -1,6 +1,6 @@
 use anyhow::Context;
 use std::{collections::HashMap, error::Error};
-use tracing::{*};
+use tracing::*;
 
 use crate::{
     error::SafeError,
@@ -15,7 +15,7 @@ pub struct ParsedChapter {
 }
 
 #[allow(dead_code)]
-pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, SafeError> {
+pub async fn parse_chapter(chapter: u8, book: Book) -> Result<ParsedChapter, SafeError> {
     info!("Parsing chapter {} of {}", chapter, book);
 
     let base_url = "https://www.abarim-publications.com/Interlinear-New-Testament";
@@ -35,14 +35,7 @@ pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, 
 
     let mut parsed_verses: Vec<Verse> = vec![];
     for (verse_i, _) in verses.enumerate() {
-        let v = parse_verse(
-            collection,
-            book,
-            chapter,
-            verse_i as isize + 1,
-            &dom,
-            parser,
-        )?;
+        let v = parse_verse(collection, book, chapter, verse_i as u8 + 1, &dom, parser)?;
         parsed_verses.push(v);
     }
 
@@ -51,14 +44,14 @@ pub async fn parse_chapter(chapter: isize, book: Book) -> Result<ParsedChapter, 
     })
 }
 
-fn get_url(base: &str, book: Book, chapter: isize) -> String {
+fn get_url(base: &str, book: Book, chapter: u8) -> String {
     format!(
         "{base}/{b}/{b}-{chapter}-parsed.html",
         b = book.to_string().capitalize()
     )
 }
 
-fn get_verse_translation(verse_number: isize, dom: &tl::VDom) -> Option<String> {
+fn get_verse_translation(verse_number: u8, dom: &tl::VDom) -> Option<String> {
     let parser = dom.parser();
     let verse_selector = &format!("[id*='KJV-AVerse-{verse_number}']");
     let trans = dom
@@ -74,8 +67,8 @@ fn get_verse_translation(verse_number: isize, dom: &tl::VDom) -> Option<String> 
 fn parse_verse(
     collection: Collection,
     book: Book,
-    chapter_number: isize,
-    verse_number: isize,
+    chapter_number: u8,
+    verse_number: u8,
     dom: &tl::VDom,
     parser: &tl::Parser,
 ) -> Result<Verse, Box<dyn Error + Send + Sync>> {
@@ -105,7 +98,7 @@ fn parse_verse(
             book,
             chapter_number,
             verse_number,
-            word_i as isize,
+            word_i as u8,
         )?;
         parsed_words.push(w);
     }
@@ -124,9 +117,9 @@ fn parse_word(
     word: tl::NodeHandle,
     words_wrapper_dom: &tl::VDom,
     book: Book,
-    chapter_number: isize,
-    verse_number: isize,
-    word_number: isize,
+    chapter_number: u8,
+    verse_number: u8,
+    word_number: u8,
 ) -> Result<Word, Box<dyn Error + Send + Sync>> {
     let word_html = word
         .get(words_wrapper_dom.parser())

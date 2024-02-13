@@ -1,11 +1,6 @@
-
-
 use serde::Serialize;
 
-use crate::{
-    error::{SafeError},
-    grammar::Verse,
-};
+use crate::{error::SafeError, grammar::Verse};
 
 use super::{verse_model::VerseFilter, verse_repo::VerseRepo};
 
@@ -41,8 +36,8 @@ impl VerseService {
         VerseService { repo: VerseRepo {} }
     }
 
-    pub async fn find_one(&self, filter: VerseFilter) -> Result<Option<Verse>, SafeError> {
-        self.repo.find_one(filter).await
+    pub async fn find_one(filter: &VerseFilter) -> Result<Option<Verse>, SafeError> {
+        VerseRepo::find_one(filter).await
     }
 
     pub async fn get_manifest() -> Result<Manifest, SafeError> {

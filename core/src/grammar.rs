@@ -1,9 +1,13 @@
 use std::collections::HashMap;
 
+use paperclip::v2::im;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
-use crate::texts::{Book, Collection};
+use crate::{
+    api::verse::verse_model::VerseFilter,
+    texts::{Book, Collection},
+};
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
@@ -234,8 +238,8 @@ pub struct Word {
 pub struct Verse {
     pub collection: Collection,
     pub book: Book,
-    pub chapter_number: isize,
-    pub verse_number: isize,
+    pub chapter_number: u8,
+    pub verse_number: u8,
     pub translation: HashMap<LanguageCode, String>,
     pub words: Vec<Word>,
 }

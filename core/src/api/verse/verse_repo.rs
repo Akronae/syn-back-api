@@ -19,12 +19,22 @@ pub struct VerseRepo;
 impl VerseRepo {
     pub const COLLECTION_NAME: &'static str = "verses";
 
-    pub async fn find_one(&self, filter: VerseFilter) -> Result<Option<Verse>, SafeError> {
+    pub async fn find_one(filter: &VerseFilter) -> Result<Option<Verse>, SafeError> {
         get_collection()
             .await?
-            .find_one(filter, None)
+            .find_one(Some(filter.into()), None)
             .await
             .map_err_safe()
+    }
+
+    pub async fn update_one(update: &Verse) -> Result<(), SafeError> {
+        get_collection()
+            .await?
+            .replace_one((&VerseFilter::from(update)).into(), update, None)
+            .await
+            .map_err_safe()?;
+
+        Ok(())
     }
 }
 
@@ -48,25 +58,4 @@ pub async fn configure() -> Result<(), SafeError> {
         .expect("error creating index!");
 
     Ok(())
-}
-
-impl From<VerseFilter> for Option<Document> {
-    fn from(value: VerseFilter) -> Self {
-        let mut doc = Document::new();
-
-        if let Some(collection) = value.collection {
-            doc.insert(name_of!(collection).camel_case(), collection);
-        }
-        if let Some(book) = value.book {
-            doc.insert(name_of!(book).camel_case(), book);
-        }
-        if let Some(chapter_number) = value.chapter_number {
-            doc.insert(name_of!(chapter_number).camel_case(), chapter_number);
-        }
-        if let Some(verse_number) = value.verse_number {
-            doc.insert(name_of!(verse_number).camel_case(), verse_number);
-        }
-
-        Some(doc)
-    }
 }
