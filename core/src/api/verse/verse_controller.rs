@@ -8,7 +8,7 @@ use super::verse_service::VerseService;
 
 use actix_web::{
     get,
-    web::{self, Data, Path},
+    web::{self, Path},
     Responder,
 };
 use anyhow::Context;

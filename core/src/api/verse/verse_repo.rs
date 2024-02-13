@@ -1,15 +1,14 @@
 use mongodb::{
-    bson::{doc, Document},
+    bson::{doc},
     options::IndexOptions,
     Collection, IndexModel,
 };
-use nameof::name_of;
+
 
 use crate::{
     error::{MapErrSafe, SafeError},
     grammar::Verse,
     persistence::get_db,
-    utils::str::camel_case::CamelCase,
 };
 
 use super::verse_model::VerseFilter;

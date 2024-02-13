@@ -16,8 +16,8 @@ impl From<&Verse> for VerseFilter {
         Self {
             collection: Some(verse.collection.to_string()),
             book: Some(verse.book.to_string()),
-            chapter_number: Some(verse.chapter_number as u8),
-            verse_number: Some(verse.verse_number as u8),
+            chapter_number: Some(verse.chapter_number),
+            verse_number: Some(verse.verse_number),
         }
     }
 }

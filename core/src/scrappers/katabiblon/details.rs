@@ -69,7 +69,7 @@ async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetail
         .get(parser)
         .unwrap()
         .inner_text(parser);
-    let infos = title_str.trim().split(',').collect::<Vec<&str>>();
+    let _infos = title_str.trim().split(',').collect::<Vec<&str>>();
 
     let translation_bytes = dom
         .query_selector("input[name='user-definition-basic']")
@@ -97,11 +97,11 @@ async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetail
         .unwrap()
         .inner_text(parser);
 
-    return Ok(WordDetails {
+    Ok(WordDetails {
         lemma: lemma.to_string(),
         translation: translation.to_string().decode_html(),
         description: desc.to_string().decode_html(),
-    });
+    })
 }
 
 fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i32 {

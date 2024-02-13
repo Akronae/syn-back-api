@@ -11,13 +11,12 @@ use crate::{
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
-    grammar::Word,
     persistence,
 };
 
 #[allow(dead_code)]
 pub async fn import() -> Result<(), SafeError> {
-    let lexicon_repo = LexiconRepo {};
+    let _lexicon_repo = LexiconRepo {};
 
     let mut first_verse = VerseRepo::find_one(&VerseFilter {
         collection: Some("new_testament".to_string()),

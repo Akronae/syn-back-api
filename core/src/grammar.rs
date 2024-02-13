@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use paperclip::v2::im;
+
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
 use crate::{
-    api::verse::verse_model::VerseFilter,
     texts::{Book, Collection},
 };
 
