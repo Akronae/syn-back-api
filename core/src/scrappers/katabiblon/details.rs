@@ -22,10 +22,9 @@ struct ParsingOption {
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash, Serialize)]
 pub struct WordDetails {
-    pub lemma: Vec<String>,
+    pub lemma: String,
     pub translation: String,
     pub description: String,
-    pub inflection_lemma: String,
 }
 
 pub async fn search_word_details(
@@ -54,11 +53,7 @@ pub async fn search_word_details(
     .await
 }
 
-async fn extract_details(
-    word: &str,
-    opt: i32,
-    inflection_lemma: &str,
-) -> Result<WordDetails, SafeError> {
+async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetails, SafeError> {
     let url = &get_search_url(word, &Some(opt))?;
     debug!("Fetching {}", url);
     let res = reqwest::get(url).await?.text().await?;
@@ -103,15 +98,9 @@ async fn extract_details(
         .inner_text(parser);
 
     return Ok(WordDetails {
-        lemma: infos
-            .first()
-            .unwrap()
-            .split('/')
-            .map(|x| x.trim().to_string())
-            .collect::<Vec<String>>(),
+        lemma: lemma.to_string(),
         translation: translation.to_string().decode_html(),
         description: desc.to_string().decode_html(),
-        inflection_lemma: inflection_lemma.to_string(),
     });
 }
 
@@ -200,7 +189,7 @@ async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
         .query_selector(parser, "table")
         .context("Could not find table")?
         .next()
-        .unwrap()
+        .with_context(|| format!("could not get first table in {}", res))?
         .get(parser)
         .unwrap()
         .inner_html(parser);

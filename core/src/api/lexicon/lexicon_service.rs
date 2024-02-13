@@ -1,10 +1,4 @@
-
-
-
-
-use crate::{
-    error::{SafeError},
-};
+use crate::error::SafeError;
 
 use super::{
     lexicon_model::{LexiconEntry, LexiconFilter},
@@ -23,6 +17,6 @@ impl LexiconService {
     }
 
     pub async fn find_one(&self, filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
-        self.repo.find_one(filter).await
+        LexiconRepo::find_one(filter).await
     }
 }

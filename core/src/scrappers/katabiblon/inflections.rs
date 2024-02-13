@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use strum::Display;
 use tracing::debug;
 use url::Url;
@@ -31,6 +30,9 @@ pub async fn extract_inflections(lemma: &str) -> Result<Vec<WordInflection>, Saf
     let mut word_inflections = Vec::<WordInflection>::new();
     for table in tables {
         let inflection = cells_to_word_inflection(&table).await?;
+        if inflection.noun.is_none() {
+            continue;
+        }
         word_inflections.push(inflection);
     }
 
@@ -96,10 +98,10 @@ async fn extract_inflection_tables(lemma: &str) -> Result<Vec<Vec<Cell>>, SafeEr
                 let t = row_cell.inner_text(tr_parser);
                 let text = t.split('[').next().unwrap().trim();
                 let node_type = match tag {
-                    "th" => CellType::Header,
-                    "td" => CellType::Data,
-                    _ => panic!("Unknown tag"),
-                };
+                    "th" => Ok(CellType::Header),
+                    "td" => Ok(CellType::Data),
+                    _ => Err("Unknown tag"),
+                }?;
 
                 for row_i in 0..rowspan {
                     for col_i in 0..colspan {
@@ -151,7 +153,11 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
                 }
             }
 
-            inflections.insert(headers, cell.data.to_string());
+            let data = cell.data.trim().to_string();
+            if data.is_empty() {
+                continue;
+            }
+            inflections.insert(headers, data);
         }
     }
 
@@ -167,11 +173,21 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
             let noun = infl.noun.as_mut().unwrap();
 
             let declension_opt;
-            if parsing_1.contains("2nd Decl.") {
+            if parsing_1.contains("1st Decl.") {
+                if noun.first_declension.is_none() {
+                    noun.first_declension = Some(NounInflectionGenders::default());
+                }
+                declension_opt = noun.first_declension.as_mut();
+            } else if parsing_1.contains("2nd Decl.") {
                 if noun.second_declension.is_none() {
                     noun.second_declension = Some(NounInflectionGenders::default());
                 }
                 declension_opt = noun.second_declension.as_mut();
+            } else if parsing_1.contains("3rd Decl.") {
+                if noun.third_declension.is_none() {
+                    noun.third_declension = Some(NounInflectionGenders::default());
+                }
+                declension_opt = noun.third_declension.as_mut();
             } else {
                 return Err(format!("unknown declension {}", parsing_1).into());
             }
@@ -246,9 +262,15 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
 
             if parsing.contains(&"Contracted".to_string()) {
                 gram_case.unwrap().contracted = word.to_string();
-            } else {
+            } else if parsing.contains(&"Uncontracted".to_string()) {
                 gram_case.unwrap().uncontracted = word.to_string();
+            } else {
+                return Err(format!("unknown contraction {}", parsing.join(", ")).into());
             }
+        } else if parsing_1.contains("Indeclinable") {
+            continue;
+        } else {
+            return Err(format!("unknown parsing {}", parsing_1).into());
         }
     }
 

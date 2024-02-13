@@ -31,22 +31,28 @@ pub async fn import() -> Result<(), SafeError> {
     let mut has_changes = false;
 
     for word in &mut first_verse.words {
-        let parsed = parser::parse_word(&word.text, &word.declension).await?;
-        let parsed_lemma = parsed.lemma.first().unwrap().to_string();
+        async fn is_already_in_lexicon(lemma: &str) -> Result<bool, SafeError> {
+            Ok(LexiconRepo::find_one(LexiconFilter {
+                lemma: Some(lemma.to_string()),
+            })
+            .await?
+            .is_some())
+        }
 
-        if parsed_lemma != word.text {
-            word.text = parsed_lemma.to_owned();
+        if is_already_in_lexicon(&word.text).await? {
+            debug!("{} already in lexicon", word.text);
+            continue;
+        }
+
+        let parsed = parser::parse_word(&word.text, &word.declension).await?;
+
+        if parsed.lemma != word.text {
+            word.text = parsed.lemma.to_owned();
             has_changes = true;
         }
 
-        let lexicon_entry = lexicon_repo
-            .find_one(LexiconFilter {
-                lemma: Some(parsed_lemma.to_owned()),
-            })
-            .await?;
-
-        if lexicon_entry.is_some() {
-            debug!("{} already in lexicon", parsed_lemma);
+        if is_already_in_lexicon(&parsed.lemma).await? {
+            debug!("{} already in lexicon", parsed.lemma);
             continue;
         }
 

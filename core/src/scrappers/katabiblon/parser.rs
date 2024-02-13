@@ -1,5 +1,3 @@
-
-
 use tracing::*;
 
 use crate::{
@@ -19,7 +17,7 @@ pub async fn parse_word(
     let details = search_word_details(greek_word, declension).await?;
     dbg!(details.clone());
 
-    let inflections = extract_inflections(&details.inflection_lemma).await?;
+    let inflections = extract_inflections(&details.lemma).await?;
     dbg!(inflections.clone());
 
     Ok(LexiconEntry {

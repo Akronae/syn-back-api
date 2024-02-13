@@ -5,7 +5,6 @@ use mongodb::{
 };
 use nameof::name_of;
 
-
 use crate::{
     error::{MapErrSafe, SafeError},
     persistence::get_db,
@@ -19,7 +18,7 @@ pub struct LexiconRepo;
 impl LexiconRepo {
     pub const COLLECTION_NAME: &'static str = "lexicon";
 
-    pub async fn find_one(&self, filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
+    pub async fn find_one(filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
         get_collection()
             .await?
             .find_one(filter, None)
