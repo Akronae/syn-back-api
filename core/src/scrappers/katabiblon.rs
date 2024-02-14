@@ -7,10 +7,14 @@ use tracing::{debug, info};
 
 use crate::{
     api::{
-        lexicon::{lexicon_model::LexiconFilter, lexicon_repo::LexiconRepo},
+        lexicon::{
+            lexicon_model::{LexiconEntry, LexiconFilter, LexiconFilterInflection, WordInflection},
+            lexicon_repo::LexiconRepo,
+        },
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
+    grammar::Declension,
     persistence,
 };
 
@@ -30,42 +34,77 @@ pub async fn import() -> Result<(), SafeError> {
     let mut has_changes = false;
 
     for word in &mut first_verse.words {
-        async fn is_already_in_lexicon(lemma: &str) -> Result<bool, SafeError> {
-            Ok(LexiconRepo::find_one(LexiconFilter {
-                lemma: Some(lemma.to_string()),
+        async fn find_in_lexicon(
+            word: &str,
+            declension: &Declension,
+        ) -> Result<Option<LexiconEntry>, SafeError> {
+            if declension.indeclinable.unwrap_or(false) {
+                return LexiconRepo::find_one(LexiconFilter {
+                    lemma: Some(word.to_owned()),
+                    ..Default::default()
+                })
+                .await;
+            }
+
+            LexiconRepo::find_one(LexiconFilter {
+                inflection: Some(LexiconFilterInflection {
+                    declension: declension.to_owned(),
+                    word: word.to_string(),
+                }),
+                ..Default::default()
             })
-            .await?
-            .is_some())
+            .await
         }
 
-        if is_already_in_lexicon(&word.text).await? {
+        let parsed;
+        if let Some(already) = find_in_lexicon(&word.text, &word.declension).await? {
             debug!("{} already in lexicon", word.text);
-            continue;
+            parsed = already;
+        } else {
+            debug!("{} not in lexicon, fetching", word.text);
+            parsed = parser::parse_word(&word.text, &word.declension).await?;
         }
 
-        let parsed = parser::parse_word(&word.text, &word.declension).await?;
+        if let Some(parsed_inflection) = parsed.inflections.first() {
+            let inflected = parsed_inflection.find_inflection(&word.declension);
 
-        if parsed.lemma != word.text {
-            word.text = parsed.lemma.to_owned();
-            has_changes = true;
+            if let Some(inflected) = inflected {
+                if inflected != word.text {
+                    word.text = inflected.to_owned();
+                    has_changes = true;
+                    debug!("{} changing to {}", word.text, inflected);
+                } else {
+                    debug!("{} already inflected", word.text);
+                }
+            } else {
+                debug!(
+                    "{} not found with inflection {:?} in {:?}",
+                    word.text, word.declension, parsed.inflections
+                );
+            }
+        } else {
+            if parsed.lemma != word.text {
+                word.text = parsed.lemma.to_owned();
+                has_changes = true;
+                debug!(
+                    "{} has no inflection, so changing to lemma {}",
+                    word.text, parsed.lemma
+                );
+            }
         }
 
-        if is_already_in_lexicon(&parsed.lemma).await? {
-            debug!("{} already in lexicon", parsed.lemma);
-            continue;
-        }
-
-        persistence::get_db()
+        if find_in_lexicon(&word.text, &word.declension)
             .await?
-            .collection(LexiconRepo::COLLECTION_NAME)
-            .insert_many(Vec::from([parsed.clone()]), None)
-            .await?;
+            .is_none()
+        {
+            LexiconRepo::insert_one(parsed.clone()).await?;
 
-        info!(
-            "{:?} imported into {}",
-            parsed,
-            LexiconRepo::COLLECTION_NAME
-        );
+            info!(
+                "{:?} imported into {}",
+                parsed,
+                LexiconRepo::COLLECTION_NAME
+            );
+        }
     }
 
     if has_changes {

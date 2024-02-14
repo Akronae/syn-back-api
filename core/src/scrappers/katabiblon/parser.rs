@@ -18,7 +18,6 @@ pub async fn parse_word(
     dbg!(details.clone());
 
     let inflections = extract_inflections(&details.lemma).await?;
-    dbg!(inflections.clone());
 
     Ok(LexiconEntry {
         lemma: details.lemma,

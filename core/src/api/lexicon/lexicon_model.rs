@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::grammar::Declension;
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LexiconEntry {
@@ -12,15 +14,7 @@ pub struct LexiconEntry {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
 pub struct WordInflection {
-    pub noun: Option<NounInflectionDeclensions>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
-pub struct NounInflectionDeclensions {
-    pub first_declension: Option<NounInflectionGenders>,
-    pub second_declension: Option<NounInflectionGenders>,
-    pub third_declension: Option<NounInflectionGenders>,
+    pub noun: Option<NounInflectionGenders>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -51,11 +45,18 @@ pub struct NounInflectionCases {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
 pub struct NounInflectionForm {
-    pub contracted: String,
-    pub uncontracted: String,
+    pub contracted: Option<String>,
+    pub uncontracted: Option<String>,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct LexiconFilter {
     pub lemma: Option<String>,
+    pub inflection: Option<LexiconFilterInflection>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LexiconFilterInflection {
+    pub word: String,
+    pub declension: Declension,
 }

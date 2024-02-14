@@ -6,8 +6,8 @@ use url::Url;
 
 use crate::{
     api::lexicon::lexicon_model::{
-        NounInflectionCases, NounInflectionDeclensions, NounInflectionForm, NounInflectionGenders,
-        NounInflectionNumbers, WordInflection,
+        NounInflectionCases, NounInflectionForm, NounInflectionGenders, NounInflectionNumbers,
+        WordInflection,
     },
     error::SafeError,
 };
@@ -168,47 +168,26 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
         let parsing_1 = parsing.first().unwrap_or(empty_str);
         if parsing_1.contains("Noun") {
             if infl.noun.is_none() {
-                infl.noun = Some(NounInflectionDeclensions::default());
+                infl.noun = Some(NounInflectionGenders::default());
             }
             let noun = infl.noun.as_mut().unwrap();
 
-            let declension_opt;
-            if parsing_1.contains("1st Decl.") {
-                if noun.first_declension.is_none() {
-                    noun.first_declension = Some(NounInflectionGenders::default());
-                }
-                declension_opt = noun.first_declension.as_mut();
-            } else if parsing_1.contains("2nd Decl.") {
-                if noun.second_declension.is_none() {
-                    noun.second_declension = Some(NounInflectionGenders::default());
-                }
-                declension_opt = noun.second_declension.as_mut();
-            } else if parsing_1.contains("3rd Decl.") {
-                if noun.third_declension.is_none() {
-                    noun.third_declension = Some(NounInflectionGenders::default());
-                }
-                declension_opt = noun.third_declension.as_mut();
-            } else {
-                return Err(format!("unknown declension {}", parsing_1).into());
-            }
-            let declension = declension_opt.unwrap();
-
             let gender_opt;
             if parsing_1.contains("Feminine") {
-                if declension.feminine.is_none() {
-                    declension.feminine = Some(NounInflectionNumbers::default());
+                if noun.feminine.is_none() {
+                    noun.feminine = Some(NounInflectionNumbers::default());
                 }
-                gender_opt = declension.feminine.as_mut();
+                gender_opt = noun.feminine.as_mut();
             } else if parsing_1.contains("Masculine") {
-                if declension.masculine.is_none() {
-                    declension.masculine = Some(NounInflectionNumbers::default());
+                if noun.masculine.is_none() {
+                    noun.masculine = Some(NounInflectionNumbers::default());
                 }
-                gender_opt = declension.masculine.as_mut();
+                gender_opt = noun.masculine.as_mut();
             } else if parsing_1.contains("Neuter") {
-                if declension.neuter.is_none() {
-                    declension.neuter = Some(NounInflectionNumbers::default());
+                if noun.neuter.is_none() {
+                    noun.neuter = Some(NounInflectionNumbers::default());
                 }
-                gender_opt = declension.neuter.as_mut();
+                gender_opt = noun.neuter.as_mut();
             } else {
                 return Err(format!("unknown gender {}", parsing_1).into());
             }
@@ -261,9 +240,9 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
             }
 
             if parsing.contains(&"Contracted".to_string()) {
-                gram_case.unwrap().contracted = word.to_string();
+                gram_case.unwrap().contracted = Some(word.to_string());
             } else if parsing.contains(&"Uncontracted".to_string()) {
-                gram_case.unwrap().uncontracted = word.to_string();
+                gram_case.unwrap().uncontracted = Some(word.to_string());
             } else {
                 return Err(format!("unknown contraction {}", parsing.join(", ")).into());
             }

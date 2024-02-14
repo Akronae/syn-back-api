@@ -1,12 +1,9 @@
 use std::collections::HashMap;
 
-
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
-use crate::{
-    texts::{Book, Collection},
-};
+use crate::texts::{Book, Collection};
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
 #[strum(serialize_all = "snake_case")]
@@ -108,7 +105,6 @@ pub enum Case {
     Accusative,
     Dative,
     Genitive,
-    Indeclinable,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
@@ -180,6 +176,7 @@ pub struct Declension {
     pub voice: Option<Voice>,
     pub tense: Option<Tense>,
     pub theme: Option<Theme>,
+    pub indeclinable: Option<bool>,
 }
 
 impl Declension {
@@ -194,6 +191,7 @@ impl Declension {
             voice: Default::default(),
             tense: Default::default(),
             theme: Default::default(),
+            indeclinable: Default::default(),
         }
     }
 }

@@ -23,6 +23,7 @@ pub fn get_word_fix(
         voice: None,
         tense: None,
         theme: None,
+        indeclinable: Some(false),
     });
 
     if book == Book::Matthew && chapter == 0 && verse == 15 && word == 13 {
@@ -88,6 +89,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
     if comp_1 == "indeclinable" {
         return Declension {
             part_of_speech: pos,
+            indeclinable: Some(true),
             ..Declension::partial_default(pos)
         };
     }
@@ -285,5 +287,6 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         voice,
         tense,
         theme: None,
+        indeclinable: Some(false),
     }
 }

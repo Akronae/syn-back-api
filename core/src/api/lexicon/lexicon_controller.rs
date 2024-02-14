@@ -1,9 +1,6 @@
-use crate::{
-    api::lexicon::lexicon_model::LexiconFilter,
-    error::MapErrActix,
-};
+use crate::{api::lexicon::lexicon_model::LexiconFilter, error::MapErrActix};
 
-use super::{lexicon_service::LexiconService};
+use super::lexicon_service::LexiconService;
 
 use actix_web::{
     get,
@@ -11,8 +8,6 @@ use actix_web::{
     Responder,
 };
 use anyhow::Context;
-
-
 
 #[get("/{lemma}")]
 async fn get_lexicon(
@@ -22,6 +17,7 @@ async fn get_lexicon(
     let lexicon = lexicon_service
         .find_one(LexiconFilter {
             lemma: params.lemma.to_owned(),
+            ..Default::default()
         })
         .await
         .map_err_actix()?
