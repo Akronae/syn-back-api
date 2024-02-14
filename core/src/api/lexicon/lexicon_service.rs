@@ -1,31 +1,18 @@
-use core::num;
-
-use tracing_subscriber::fmt::format;
-
 use crate::{
     error::SafeError,
     grammar::{Case, Declension, Gender, Number, PartOfSpeech},
-    main,
-    scrappers::katabiblon::inflections,
 };
 
 use super::{
-    lexicon_model::{
-        LexiconEntry, LexiconFilter, NounInflectionCases, NounInflectionForm,
-        NounInflectionGenders, NounInflectionNumbers, WordInflection,
-    },
+    lexicon_model::{LexiconEntry, LexiconFilter, WordInflection},
     lexicon_repo::LexiconRepo,
 };
 
-pub struct LexiconService {
-    repo: LexiconRepo,
-}
+pub struct LexiconService {}
 
 impl LexiconService {
     pub fn new() -> Self {
-        LexiconService {
-            repo: LexiconRepo {},
-        }
+        LexiconService {}
     }
 
     pub async fn find_one(&self, filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {

@@ -1,18 +1,18 @@
-use std::borrow::Borrow;
+
 
 use mongodb::{
-    bson::{doc, Bson, Document},
+    bson::{doc, Document},
     options::IndexOptions,
     Collection, IndexModel,
 };
 use nameof::name_of;
-use tracing::debug;
+
 
 use crate::{
     error::{MapErrSafe, SafeError},
     grammar::{Case, Declension, Gender, Number, PartOfSpeech},
     persistence::get_db,
-    utils::str::camel_case::CamelCase,
+    utils::str::{camel_case::CamelCase},
 };
 
 use super::lexicon_model::{LexiconEntry, LexiconFilter};
@@ -23,13 +23,13 @@ impl LexiconRepo {
     pub const COLLECTION_NAME: &'static str = "lexicon";
 
     pub async fn find_one(filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
-        let res = get_collection()
-            .await?
-            .find_one(filter.clone(), None)
-            .await
-            .map_err_safe();
+        
 
-        res
+        get_collection()
+            .await?
+            .find_one(filter.to_document()?, None)
+            .await
+            .map_err_safe()
     }
 
     pub async fn insert_many(entries: &[LexiconEntry]) -> Result<(), SafeError> {
@@ -69,29 +69,26 @@ pub async fn configure() -> Result<(), SafeError> {
     Ok(())
 }
 
-impl From<LexiconFilter> for Option<Document> {
-    fn from(value: LexiconFilter) -> Self {
+impl LexiconFilter {
+    fn to_document(&self) -> Result<Document, SafeError> {
         let mut doc = Document::new();
 
-        if let Some(lemma) = value.lemma {
+        if let Some(lemma) = &self.lemma {
             doc.insert(
                 name_of!(lemma).camel_case(),
                 doc! {"$regex": lemma, "$options": "i"},
             );
         }
 
-        if let Some(inflection) = value.inflection {
-            let key = format!(
-                "{}.contracted",
-                inflection.declension.to_inflection_key().unwrap()
-            );
+        if let Some(inflection) = &self.inflection {
+            let key = format!("{}.contracted", inflection.declension.to_inflection_key()?);
             doc.insert(
                 "inflections",
-                doc! {"$elemMatch": doc! {key: doc! {"$regex": inflection.word, "$options": "i"}}},
+                doc! {"$elemMatch": doc! {key: doc! {"$regex": inflection.word.to_owned(), "$options": "i"}}},
             );
         }
 
-        Some(doc)
+        Ok(doc)
     }
 }
 
@@ -106,13 +103,13 @@ impl Declension {
                 Some(Gender::Feminine) => "feminine",
                 Some(Gender::Masculine) => "masculine",
                 Some(Gender::Neuter) => "neuter",
-                None => return Err(format!("part of speech required").into()),
+                None => return Err("gender required".to_string().into()),
             });
 
             s.push(match self.number {
                 Some(Number::Singular) => "singular",
                 Some(Number::Plural) => "plural",
-                None => return Err(format!("number required").into()),
+                None => return Err("number required".to_string().into()),
             });
 
             s.push(match self.case {
@@ -121,12 +118,12 @@ impl Declension {
                 Some(Case::Dative) => "dative",
                 Some(Case::Accusative) => "accusative",
                 Some(Case::Vocative) => "vocative",
-                None => return Err(format!("case required").into()),
+                None => return Err("case required".to_string().into()),
             });
         } else {
             return Err(format!("part of speech not supported {:?}", self.part_of_speech).into());
         }
 
-        return Ok(s.join("."));
+        Ok(s.join("."))
     }
 }

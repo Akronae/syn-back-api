@@ -1,5 +1,7 @@
 use error::SafeError;
 
+
+
 mod api;
 mod config;
 mod error;
@@ -15,7 +17,7 @@ async fn main() -> Result<(), SafeError> {
     log::init()?;
 
     // scrappers::abarim::import().await?;
-    scrappers::katabiblon::import().await?;
+    // scrappers::katabiblon::import().await?;
 
     api::init().await?;
 

@@ -8,14 +8,13 @@ use tracing::{debug, info};
 use crate::{
     api::{
         lexicon::{
-            lexicon_model::{LexiconEntry, LexiconFilter, LexiconFilterInflection, WordInflection},
+            lexicon_model::{LexiconEntry, LexiconFilter, LexiconFilterInflection},
             lexicon_repo::LexiconRepo,
         },
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
     grammar::Declension,
-    persistence,
 };
 
 #[allow(dead_code)]
@@ -82,15 +81,13 @@ pub async fn import() -> Result<(), SafeError> {
                     word.text, word.declension, parsed.inflections
                 );
             }
-        } else {
-            if parsed.lemma != word.text {
-                word.text = parsed.lemma.to_owned();
-                has_changes = true;
-                debug!(
-                    "{} has no inflection, so changing to lemma {}",
-                    word.text, parsed.lemma
-                );
-            }
+        } else if parsed.lemma != word.text {
+            word.text = parsed.lemma.to_owned();
+            has_changes = true;
+            debug!(
+                "{} has no inflection, so changing to lemma {}",
+                word.text, parsed.lemma
+            );
         }
 
         if find_in_lexicon(&word.text, &word.declension)

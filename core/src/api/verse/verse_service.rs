@@ -27,13 +27,11 @@ pub struct Manifest {
     pub collections: Vec<ManifestCollection>,
 }
 
-pub struct VerseService {
-    repo: VerseRepo,
-}
+pub struct VerseService {}
 
 impl VerseService {
     pub fn new() -> VerseService {
-        VerseService { repo: VerseRepo {} }
+        VerseService {}
     }
 
     pub async fn find_one(filter: &VerseFilter) -> Result<Option<Verse>, SafeError> {

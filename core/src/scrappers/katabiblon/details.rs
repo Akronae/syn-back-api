@@ -117,26 +117,16 @@ fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i
         Some(&"(fem)") => Some(Gender::Feminine),
         _ => None,
     };
-    let mood = match parsing_comps.first() {
-        _ => None,
-    };
+    let mood = None;
     let number = match parsing_comps.get(2) {
         Some(&"sg") => Some(Number::Singular),
         _ => None,
     };
     let part_of_speech = PartOfSpeech::Noun(Noun::Common);
-    let person = match parsing_comps.first() {
-        _ => None,
-    };
-    let tense = match parsing_comps.first() {
-        _ => None,
-    };
-    let theme = match parsing_comps.first() {
-        _ => None,
-    };
-    let voice = match parsing_comps.first() {
-        _ => None,
-    };
+    let person = None;
+    let tense = None;
+    let theme = None;
+    let voice = None;
 
     if case == declension.case {
         score += 1;

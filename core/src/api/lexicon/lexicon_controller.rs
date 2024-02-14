@@ -1,23 +1,27 @@
-use crate::{api::lexicon::lexicon_model::LexiconFilter, error::MapErrActix};
+use crate::{
+    api::lexicon::lexicon_model::LexiconFilter, error::MapErrActix,
+    utils::extractors::query_nested::QueryNested,
+};
 
 use super::lexicon_service::LexiconService;
 
 use actix_web::{
     get,
-    web::{self, Data, Path},
+    web::{self, Data},
     Responder,
 };
 use anyhow::Context;
 
-#[get("/{lemma}")]
+#[get("/find")]
 async fn get_lexicon(
-    params: Path<LexiconFilter>,
+    params: QueryNested<LexiconFilter>,
     lexicon_service: Data<LexiconService>,
 ) -> actix_web::Result<impl Responder> {
+    dbg!(params.clone());
     let lexicon = lexicon_service
         .find_one(LexiconFilter {
             lemma: params.lemma.to_owned(),
-            ..Default::default()
+            inflection: params.inflection.to_owned(),
         })
         .await
         .map_err_actix()?
