@@ -46,7 +46,7 @@ pub struct NounInflectionCases {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
 pub struct NounInflectionForm {
     pub contracted: Option<String>,
-    pub uncontracted: Option<String>,
+    pub uncontracted: Option<Vec<String>>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]

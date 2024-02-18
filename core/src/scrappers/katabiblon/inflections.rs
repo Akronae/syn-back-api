@@ -242,7 +242,8 @@ async fn cells_to_word_inflection(cells: &[Cell]) -> Result<WordInflection, Safe
             if parsing.contains(&"Contracted".to_string()) {
                 gram_case.unwrap().contracted = Some(word.to_string());
             } else if parsing.contains(&"Uncontracted".to_string()) {
-                gram_case.unwrap().uncontracted = Some(word.to_string());
+                gram_case.unwrap().uncontracted =
+                    Some(word.split(['.', '·']).map(|x| x.to_string()).collect());
             } else {
                 return Err(format!("unknown contraction {}", parsing.join(", ")).into());
             }

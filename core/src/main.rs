@@ -1,7 +1,5 @@
 use error::SafeError;
 
-
-
 mod api;
 mod config;
 mod error;
