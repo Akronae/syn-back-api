@@ -22,9 +22,11 @@ pub struct Config;
 impl Config {
     pub fn get<T: FromStr>(self, var: EnvVar) -> Result<T, SafeError> {
         if !(*ENV_LOADED.get_or_init(|| false)) {
-            dotenv::dotenv()
-                .with_context(|| "Failed to load .env file")
-                .unwrap();
+            let local = dotenv::from_filename(".env.local").ok();
+            let default = dotenv::from_filename(".env").ok();
+            if local.is_none() && default.is_none() {
+                return Err("Failed to load .env file".into());
+            }
         }
 
         let res = std::env::var(var.to_string());

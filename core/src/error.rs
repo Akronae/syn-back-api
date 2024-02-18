@@ -1,5 +1,11 @@
 use std::io;
 
+use anyhow::anyhow;
+
+#[derive(thiserror::Error, Debug)]
+#[error(transparent)]
+pub struct Error(#[from] anyhow::Error);
+
 pub type SafeError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 pub trait IntoErr<T> {
@@ -32,13 +38,13 @@ impl IntoErr<actix_web::Error> for anyhow::Error {
 
 impl IntoErr<SafeError> for mongodb::error::Error {
     fn into_err(self) -> SafeError {
-        Box::new(self)
+        Box::new(Error(anyhow!(self)))
     }
 }
 
 impl IntoErr<SafeError> for io::Error {
     fn into_err(self) -> SafeError {
-        Box::new(self)
+        Box::new(Error(anyhow!(self)))
     }
 }
 
