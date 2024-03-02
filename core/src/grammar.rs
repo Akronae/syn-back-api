@@ -135,6 +135,7 @@ pub enum Tense {
     Present,
     Imperfect,
     Future,
+    FuturePerfect,
     Aorist,
     Aorist2nd,
     Perfect,

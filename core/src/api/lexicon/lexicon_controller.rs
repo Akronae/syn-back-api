@@ -17,7 +17,6 @@ async fn get_lexicon(
     params: QueryNested<LexiconFilter>,
     lexicon_service: Data<LexiconService>,
 ) -> actix_web::Result<impl Responder> {
-    dbg!(params.clone());
     let lexicon = lexicon_service
         .find_one(LexiconFilter {
             lemma: params.lemma.to_owned(),

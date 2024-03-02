@@ -12,13 +12,77 @@ pub struct LexiconEntry {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct WordInflection {
     pub noun: Option<NounInflectionGenders>,
+    pub verb: Option<VerbInflectionTenses>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionTenses {
+    pub present: Option<VerbInflectionThemes>,
+    pub imperfect: Option<VerbInflectionThemes>,
+    pub future: Option<VerbInflectionThemes>,
+    pub aorist: Option<VerbInflectionThemes>,
+    pub aorist_2nd: Option<VerbInflectionThemes>,
+    pub perfect: Option<VerbInflectionThemes>,
+    pub perfect_2nd: Option<VerbInflectionThemes>,
+    pub future_perfect: Option<VerbInflectionThemes>,
+    pub pluperfect: Option<VerbInflectionThemes>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionThemes {
+    pub thematic: Option<VerbInflectionMoods>,
+    pub athematic: Option<VerbInflectionMoods>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionMoods {
+    pub indicative: Option<VerbInflectionVoices>,
+    pub subjunctive: Option<VerbInflectionVoices>,
+    pub optative: Option<VerbInflectionVoices>,
+    pub imperative: Option<VerbInflectionVoices>,
+    pub infinitive: Option<VerbInflectionForm>,
+    pub participle: Option<NounInflectionGenders>,
+    pub pluperfect: Option<VerbInflectionVoices>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionVoices {
+    pub active: Option<VerbInflectionNumbers>,
+    pub middle: Option<VerbInflectionNumbers>,
+    pub passive: Option<VerbInflectionNumbers>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionNumbers {
+    pub singular: Option<VerbInflectionPersons>,
+    pub plural: Option<VerbInflectionPersons>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionPersons {
+    pub first: Option<VerbInflectionForm>,
+    pub second: Option<VerbInflectionForm>,
+    pub third: Option<VerbInflectionForm>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionForm {
+    pub contracted: Option<String>,
+    pub uncontracted: Option<Vec<String>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionGenders {
     pub masculine: Option<NounInflectionNumbers>,
     pub feminine: Option<NounInflectionNumbers>,
@@ -26,14 +90,14 @@ pub struct NounInflectionGenders {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionNumbers {
     pub singular: Option<NounInflectionCases>,
     pub plural: Option<NounInflectionCases>,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionCases {
     pub nominative: Option<NounInflectionForm>,
     pub genitive: Option<NounInflectionForm>,
@@ -43,7 +107,7 @@ pub struct NounInflectionCases {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionForm {
     pub contracted: Option<String>,
     pub uncontracted: Option<Vec<String>>,

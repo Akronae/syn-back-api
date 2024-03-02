@@ -48,6 +48,12 @@ impl IntoErr<SafeError> for io::Error {
     }
 }
 
+impl IntoErr<SafeError> for anyhow::Error {
+    fn into_err(self) -> SafeError {
+        Box::new(Error(self))
+    }
+}
+
 pub trait MapIntoErr<TRes, TErr> {
     fn map_into_err(self) -> Result<TRes, TErr>;
 }
@@ -100,6 +106,12 @@ impl<TRes> MapErrSafe<TRes> for Result<TRes, mongodb::error::Error> {
 }
 
 impl<TRes> MapErrSafe<TRes> for Result<TRes, io::Error> {
+    fn map_err_safe(self) -> Result<TRes, SafeError> {
+        self.map_into_err()
+    }
+}
+
+impl<TRes> MapErrSafe<TRes> for Result<TRes, anyhow::Error> {
     fn map_err_safe(self) -> Result<TRes, SafeError> {
         self.map_into_err()
     }

@@ -19,13 +19,11 @@ use crate::{
 
 #[allow(dead_code)]
 pub async fn import() -> Result<(), SafeError> {
-    let _lexicon_repo = LexiconRepo {};
-
     let mut first_verse = VerseRepo::find_one(&VerseFilter {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(1),
+        verse_number: Some(2),
     })
     .await?
     .context("no verse")?;

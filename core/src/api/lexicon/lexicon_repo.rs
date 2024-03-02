@@ -1,5 +1,3 @@
-
-
 use mongodb::{
     bson::{doc, Document},
     options::IndexOptions,
@@ -7,12 +5,11 @@ use mongodb::{
 };
 use nameof::name_of;
 
-
 use crate::{
     error::{MapErrSafe, SafeError},
     grammar::{Case, Declension, Gender, Number, PartOfSpeech},
     persistence::get_db,
-    utils::str::{camel_case::CamelCase},
+    utils::str::camel_case::CamelCase,
 };
 
 use super::lexicon_model::{LexiconEntry, LexiconFilter};
@@ -23,8 +20,6 @@ impl LexiconRepo {
     pub const COLLECTION_NAME: &'static str = "lexicon";
 
     pub async fn find_one(filter: LexiconFilter) -> Result<Option<LexiconEntry>, SafeError> {
-        
-
         get_collection()
             .await?
             .find_one(filter.to_document()?, None)
@@ -120,6 +115,8 @@ impl Declension {
                 Some(Case::Vocative) => "vocative",
                 None => return Err("case required".to_string().into()),
             });
+        } else if PartOfSpeech::Verb == self.part_of_speech {
+            s.push("verb");
         } else {
             return Err(format!("part of speech not supported {:?}", self.part_of_speech).into());
         }
