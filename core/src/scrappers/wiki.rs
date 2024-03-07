@@ -1,6 +1,3 @@
-pub mod details;
-pub mod parser;
-
 use anyhow::Context;
 use tracing::{debug, info};
 
@@ -13,23 +10,30 @@ use crate::{
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
-    grammar::Declension,
+    grammar::{Declension},
 };
+
+mod definition;
+mod details;
+mod noun;
+mod page;
+mod parser;
+mod table;
 
 #[allow(dead_code)]
 pub async fn import() -> Result<(), SafeError> {
-    let mut first_verse = VerseRepo::find_one(&VerseFilter {
+    let mut verse = VerseRepo::find_one(&VerseFilter {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(2),
+        verse_number: Some(1),
     })
     .await?
     .context("no verse")?;
 
     let mut has_changes = false;
 
-    for word in &mut first_verse.words {
+    for word in &mut verse.words {
         async fn find_in_lexicon(
             word: &str,
             declension: &Declension,
@@ -58,7 +62,7 @@ pub async fn import() -> Result<(), SafeError> {
             parsed = already;
         } else {
             debug!("{} not in lexicon, fetching", word.text);
-            parsed = parser::parse_word(&word.text, &word.declension).await?;
+            parsed = parser::parse_word(word.text.clone().into(), &word.declension).await?;
         }
 
         if let Some(parsed_inflection) = parsed.inflections.first() {
@@ -104,12 +108,9 @@ pub async fn import() -> Result<(), SafeError> {
     if has_changes {
         debug!(
             "updating verse {} {} {} {}",
-            first_verse.collection,
-            first_verse.book,
-            first_verse.chapter_number,
-            first_verse.verse_number
+            verse.collection, verse.book, verse.chapter_number, verse.verse_number
         );
-        VerseRepo::update_one(&first_verse).await?;
+        VerseRepo::update_one(&verse).await?;
     }
 
     Ok(())

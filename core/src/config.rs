@@ -1,6 +1,6 @@
 use std::{env::VarError, str::FromStr};
 
-use anyhow::Context;
+
 use once_cell::sync::OnceCell;
 
 use strum::Display;

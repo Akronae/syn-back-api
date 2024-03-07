@@ -83,6 +83,7 @@ pub enum Gender {
 #[serde(rename_all = "snake_case")]
 pub enum Number {
     Singular,
+    Dual,
     Plural,
 }
 
@@ -240,4 +241,12 @@ pub struct Verse {
     pub verse_number: u8,
     pub translation: HashMap<LanguageCode, String>,
     pub words: Vec<Word>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, Display, Hash)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum Dialect {
+    Attic,
+    Koine,
 }

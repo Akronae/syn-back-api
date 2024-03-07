@@ -1,6 +1,7 @@
 use std::io;
 
 use anyhow::anyhow;
+use scraper::error::SelectorErrorKind;
 
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
@@ -39,6 +40,12 @@ impl IntoErr<actix_web::Error> for anyhow::Error {
 impl IntoErr<SafeError> for mongodb::error::Error {
     fn into_err(self) -> SafeError {
         Box::new(Error(anyhow!(self)))
+    }
+}
+
+impl IntoErr<SafeError> for SelectorErrorKind<'_> {
+    fn into_err(self) -> SafeError {
+        Box::new(Error(anyhow!(self.to_string())))
     }
 }
 

@@ -66,7 +66,9 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
             Mood::Optative => Some(theme.optative.as_ref().unwrap()),
             Mood::Subjunctive => Some(theme.subjunctive.as_ref().unwrap()),
             Mood::Infinitive => {
-                return find_inflection_verb_form(theme.infinitive.as_ref().unwrap())
+                return find_inflection_verb_form(
+                    theme.infinitive.as_ref().unwrap().first().unwrap(),
+                )
             }
             Mood::Participle => {
                 return find_inflection_noun(declension, theme.participle.as_ref().unwrap())
@@ -86,6 +88,7 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
     dbg!(declension.number);
     let number = match declension.number {
         Some(Number::Singular) => Some(voice.singular.as_ref().unwrap()),
+        Some(Number::Dual) => todo!(),
         Some(Number::Plural) => Some(voice.plural.as_ref().unwrap()),
         None => panic!("No number found for {:?}", declension),
     }?;
@@ -99,7 +102,7 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         None => panic!("No person found for {:?}", declension),
     }?;
 
-    return find_inflection_verb_form(person);
+    return find_inflection_verb_form(person.first().unwrap());
 }
 
 fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -> Option<String> {
@@ -111,6 +114,7 @@ fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -
     }?;
     let number = match declension.number {
         Some(Number::Singular) => Some(gender.singular.as_ref().unwrap()),
+        Some(Number::Dual) => todo!(),
         Some(Number::Plural) => Some(gender.plural.as_ref().unwrap()),
         None => None,
     }?;
@@ -122,12 +126,12 @@ fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -
         Some(Case::Vocative) => Some(number.vocative.as_ref().unwrap()),
         None => None,
     }?;
-    return case.contracted.clone();
+    return case.first().unwrap().contracted.clone();
 }
 
 fn find_inflection_verb_form(form: &VerbInflectionForm) -> Option<String> {
     if form.contracted.is_none() {
         panic!("No contracted form found for {:?}", form)
     }
-    return form.contracted.clone();
+    form.contracted.clone()
 }

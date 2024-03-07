@@ -6,9 +6,14 @@ use crate::grammar::Declension;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LexiconEntry {
     pub lemma: String,
-    pub translation: String,
-    pub description: String,
     pub inflections: Vec<WordInflection>,
+    pub definitions: Vec<LexiconEntryDefinition>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum LexiconEntryDefinition {
+    Litteral(String),
+    FormOf(String),
 }
 
 #[serde_with::skip_serializing_none]
@@ -46,7 +51,7 @@ pub struct VerbInflectionMoods {
     pub subjunctive: Option<VerbInflectionVoices>,
     pub optative: Option<VerbInflectionVoices>,
     pub imperative: Option<VerbInflectionVoices>,
-    pub infinitive: Option<VerbInflectionForm>,
+    pub infinitive: Option<Vec<VerbInflectionForm>>,
     pub participle: Option<NounInflectionGenders>,
     pub pluperfect: Option<VerbInflectionVoices>,
 }
@@ -69,9 +74,9 @@ pub struct VerbInflectionNumbers {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct VerbInflectionPersons {
-    pub first: Option<VerbInflectionForm>,
-    pub second: Option<VerbInflectionForm>,
-    pub third: Option<VerbInflectionForm>,
+    pub first: Option<Vec<VerbInflectionForm>>,
+    pub second: Option<Vec<VerbInflectionForm>>,
+    pub third: Option<Vec<VerbInflectionForm>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -99,11 +104,11 @@ pub struct NounInflectionNumbers {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionCases {
-    pub nominative: Option<NounInflectionForm>,
-    pub genitive: Option<NounInflectionForm>,
-    pub dative: Option<NounInflectionForm>,
-    pub accusative: Option<NounInflectionForm>,
-    pub vocative: Option<NounInflectionForm>,
+    pub nominative: Option<Vec<NounInflectionForm>>,
+    pub genitive: Option<Vec<NounInflectionForm>>,
+    pub dative: Option<Vec<NounInflectionForm>>,
+    pub accusative: Option<Vec<NounInflectionForm>>,
+    pub vocative: Option<Vec<NounInflectionForm>>,
 }
 
 #[serde_with::skip_serializing_none]

@@ -104,6 +104,7 @@ impl Declension {
             s.push(match self.number {
                 Some(Number::Singular) => "singular",
                 Some(Number::Plural) => "plural",
+                Some(Number::Dual) => "dual",
                 None => return Err("number required".to_string().into()),
             });
 
