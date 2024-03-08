@@ -10,7 +10,8 @@ use crate::{
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
     error::SafeError,
-    grammar::{Declension},
+    grammar::Declension,
+    task::sleep_ms,
 };
 
 mod definition;
@@ -34,6 +35,8 @@ pub async fn import() -> Result<(), SafeError> {
     let mut has_changes = false;
 
     for word in &mut verse.words {
+        sleep_ms(1000).await;
+
         async fn find_in_lexicon(
             word: &str,
             declension: &Declension,
@@ -57,12 +60,15 @@ pub async fn import() -> Result<(), SafeError> {
         }
 
         let parsed;
+        let mut parsed_decl = None;
         if let Some(already) = find_in_lexicon(&word.text, &word.declension).await? {
             debug!("{} already in lexicon", word.text);
             parsed = already;
         } else {
             debug!("{} not in lexicon, fetching", word.text);
-            parsed = parser::parse_word(word.text.clone().into(), &word.declension).await?;
+            let res = parser::parse_word(word.text.clone().into(), &word.declension).await?;
+            parsed = res.entry;
+            parsed_decl = Some(res.declension);
         }
 
         if let Some(parsed_inflection) = parsed.inflections.first() {
@@ -89,6 +95,11 @@ pub async fn import() -> Result<(), SafeError> {
                 "{} has no inflection, so changing to lemma {}",
                 word.text, parsed.lemma
             );
+        }
+
+        if let Some(parsed_decl) = parsed_decl {
+            word.declension = parsed_decl;
+            has_changes = true;
         }
 
         if find_in_lexicon(&word.text, &word.declension)

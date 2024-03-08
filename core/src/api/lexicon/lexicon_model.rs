@@ -11,6 +11,7 @@ pub struct LexiconEntry {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum LexiconEntryDefinition {
     Litteral(String),
     FormOf(String),
@@ -98,6 +99,7 @@ pub struct NounInflectionGenders {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionNumbers {
     pub singular: Option<NounInflectionCases>,
+    pub dual: Option<NounInflectionCases>,
     pub plural: Option<NounInflectionCases>,
 }
 

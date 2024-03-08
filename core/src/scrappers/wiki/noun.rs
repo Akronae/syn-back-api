@@ -5,7 +5,7 @@ use crate::{
     },
     borrow::Cow,
     error::SafeError,
-    grammar::{Case, Declension, Noun, Number, PartOfSpeech},
+    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
@@ -21,9 +21,27 @@ use super::{
 pub struct ScrappedNoun {
     pub inflection: Option<NounInflectionGenders>,
     pub definitions: Vec<LexiconEntryDefinition>,
+    pub declension: Declension,
 }
 pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<ScrappedNoun, SafeError> {
     let doc = page::scrap(lemma).await?;
+
+    let gender = doc
+        .select(&select(".gender")?)
+        .next()
+        .context("cannot find gender")?
+        .text()
+        .collect::<Cow<str>>()
+        .trim()
+        .to_lowercase();
+    let gender = match gender.as_str() {
+        "f" => Gender::Feminine,
+        "m" => Gender::Masculine,
+        "n" => Gender::Neuter,
+        _ => return Err(format!("cannot match gender '{gender}' for {lemma}").into()),
+    };
+    let mut declension = declension.clone();
+    declension.gender = Some(gender);
 
     let mut inflection = None;
     if !declension.indeclinable.unwrap_or(false) {
@@ -36,21 +54,11 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
         let words = parse_declension_table(&decl_table)?;
         let infl = parsed_words_to_inflection(&words);
 
-        let gender = doc
-            .select(&select(".gender")?)
-            .next()
-            .context("cannot find gender")?
-            .text()
-            .collect::<Cow<str>>()
-            .trim()
-            .to_lowercase();
-
         let mut genders = NounInflectionGenders::default();
-        match gender.as_str() {
-            "f" => genders.feminine = Some(infl),
-            "m" => genders.masculine = Some(infl),
-            "n" => genders.neuter = Some(infl),
-            _ => return Err(format!("cannot match gender for {lemma}").into()),
+        match gender {
+            Gender::Feminine => genders.feminine = Some(infl),
+            Gender::Masculine => genders.masculine = Some(infl),
+            Gender::Neuter => genders.neuter = Some(infl),
         }
         inflection = Some(genders);
     }
@@ -64,6 +72,7 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
     Ok(ScrappedNoun {
         inflection,
         definitions,
+        declension,
     })
 }
 
@@ -119,6 +128,14 @@ fn parsed_words_to_inflection(words: &[ParsedWord]) -> NounInflectionNumbers {
 
             fill_cases(word, plural);
         }
+        if word.parsing.contains(&ParsingComp::Number(Number::Dual)) {
+            if infl.dual.is_none() {
+                infl.dual = Some(Default::default());
+            }
+            let dual = infl.dual.as_mut().unwrap();
+
+            fill_cases(word, dual);
+        }
     }
 
     infl
@@ -130,48 +147,42 @@ fn fill_cases(word: &ParsedWord, cases: &mut NounInflectionCases) {
             cases.nominative = Some(Default::default());
         }
         let nominative = cases.nominative.as_mut().unwrap();
-        nominative.push(NounInflectionForm {
-            contracted: Some(word.text.clone().into()),
-            ..Default::default()
-        })
+        fill_noun_inflection_forms(word, nominative);
     }
     if word.parsing.contains(&ParsingComp::Case(Case::Genitive)) {
         if cases.genitive.is_none() {
             cases.genitive = Some(Default::default());
         }
         let genitive = cases.genitive.as_mut().unwrap();
-        genitive.push(NounInflectionForm {
-            contracted: Some(word.text.clone().into()),
-            ..Default::default()
-        })
+        fill_noun_inflection_forms(word, genitive);
     }
     if word.parsing.contains(&ParsingComp::Case(Case::Dative)) {
         if cases.dative.is_none() {
             cases.dative = Some(Default::default());
         }
         let dative = cases.dative.as_mut().unwrap();
-        dative.push(NounInflectionForm {
-            contracted: Some(word.text.clone().into()),
-            ..Default::default()
-        })
+        fill_noun_inflection_forms(word, dative);
     }
     if word.parsing.contains(&ParsingComp::Case(Case::Accusative)) {
         if cases.accusative.is_none() {
             cases.accusative = Some(Default::default());
         }
         let accusative = cases.accusative.as_mut().unwrap();
-        accusative.push(NounInflectionForm {
-            contracted: Some(word.text.clone().into()),
-            ..Default::default()
-        })
+        fill_noun_inflection_forms(word, accusative);
     }
     if word.parsing.contains(&ParsingComp::Case(Case::Vocative)) {
         if cases.vocative.is_none() {
             cases.vocative = Some(Default::default());
         }
         let vocative = cases.vocative.as_mut().unwrap();
-        vocative.push(NounInflectionForm {
-            contracted: Some(word.text.clone().into()),
+        fill_noun_inflection_forms(word, vocative);
+    }
+}
+
+fn fill_noun_inflection_forms(word: &ParsedWord, forms: &mut Vec<NounInflectionForm>) {
+    for part in word.text.split("\n") {
+        forms.push(NounInflectionForm {
+            contracted: Some(part.into()),
             ..Default::default()
         })
     }

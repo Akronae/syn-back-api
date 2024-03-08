@@ -1,6 +1,5 @@
 use error::SafeError;
 
-
 mod api;
 mod borrow;
 mod config;
@@ -9,6 +8,7 @@ mod grammar;
 mod log;
 mod persistence;
 mod scrappers;
+mod task;
 mod texts;
 mod utils;
 

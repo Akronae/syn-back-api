@@ -13,7 +13,7 @@ pub async fn parse_word(
     info!("Parsing word {}", greek_word);
 
     let details = search_word_details(greek_word, declension).await?;
-    dbg!(details.clone());
+    debug!("{:?}", details.clone());
 
     Ok(LexiconEntry {
         lemma: details.lemma,

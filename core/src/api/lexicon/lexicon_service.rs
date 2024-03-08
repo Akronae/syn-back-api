@@ -40,7 +40,6 @@ impl WordInflection {
 }
 
 fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) -> Option<String> {
-    dbg!(declension.tense);
     let tense = match declension.tense {
         Some(Tense::Aorist) => Some(verb.aorist.as_ref().unwrap()),
         Some(Tense::Aorist2nd) => Some(verb.aorist_2nd.as_ref().unwrap()),
@@ -53,12 +52,10 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         Some(Tense::Present) => Some(verb.present.as_ref().unwrap()),
         None => panic!("No tense found for {:?}", declension),
     }?;
-    dbg!(declension.theme);
     let theme = match declension.theme {
         Some(Theme::Athematic) => Some(tense.athematic.as_ref().unwrap()),
         Some(Theme::Thematic) | None => Some(tense.thematic.as_ref().unwrap()),
     }?;
-    dbg!(declension.mood);
     let mood = match declension.mood {
         Some(mood) => match mood {
             Mood::Indicative => Some(theme.indicative.as_ref().unwrap()),
@@ -76,7 +73,6 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         },
         None => panic!("No mood found for {:?}", declension),
     }?;
-    dbg!(declension.voice);
     let voice = match declension.voice {
         Some(voice) => match voice {
             Voice::Active => Some(mood.active.as_ref().unwrap()),
@@ -85,14 +81,15 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         },
         None => panic!("No voice found for {:?}", declension),
     }?;
-    dbg!(declension.number);
     let number = match declension.number {
         Some(Number::Singular) => Some(voice.singular.as_ref().unwrap()),
-        Some(Number::Dual) => todo!(),
         Some(Number::Plural) => Some(voice.plural.as_ref().unwrap()),
+        Some(Number::Dual) => panic!(
+            "Dual is not a supported number for verb inflection. Found in {:?}",
+            declension
+        ),
         None => panic!("No number found for {:?}", declension),
     }?;
-    dbg!(declension.person);
     let person = match declension.person {
         Some(person) => match person {
             Person::First => Some(number.first.as_ref().unwrap()),
@@ -114,7 +111,7 @@ fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -
     }?;
     let number = match declension.number {
         Some(Number::Singular) => Some(gender.singular.as_ref().unwrap()),
-        Some(Number::Dual) => todo!(),
+        Some(Number::Dual) => Some(gender.dual.as_ref().unwrap()),
         Some(Number::Plural) => Some(gender.plural.as_ref().unwrap()),
         None => None,
     }?;

@@ -46,9 +46,13 @@ pub async fn search_word_details(
     let mut lemmas = response.query.search.iter().collect::<Vec<_>>();
 
     lemmas.sort_by(|a, b| {
-        if normalized_damerau_levenshtein(&a.title, &word)
-            < normalized_damerau_levenshtein(&b.title, &word)
-        {
+        let a_dst = normalized_damerau_levenshtein(&a.title, &word);
+        let b_dst = normalized_damerau_levenshtein(&b.title, &word);
+        debug!(
+            "comparing {} ({a_dst}) with {} ({b_dst}) to {word}",
+            a.title, b.title
+        );
+        if a_dst < b_dst {
             Ordering::Greater
         } else {
             Ordering::Less

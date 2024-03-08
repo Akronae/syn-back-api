@@ -1,3 +1,4 @@
+use anyhow::Context;
 use scraper::{CaseSensitivity, ElementRef};
 
 use crate::{
@@ -51,28 +52,50 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, Sa
                 _ => continue,
             };
 
-            let mut content = ElementRef::wrap(child)
-                .unwrap()
-                .text()
-                .collect::<Cow<str>>()
-                .trim()
-                .to_string();
+            let mut content = String::new();
 
             if matches!(cell_type, TableCellType::Header) {
-                content = content.to_lowercase();
-            }
-
-            if elem.has_class("form", CaseSensitivity::CaseSensitive) {
                 content = ElementRef::wrap(child)
-                    .unwrap()
-                    .select(&select(".Polyt")?)
-                    .last()
                     .unwrap()
                     .text()
                     .collect::<Cow<str>>()
                     .trim()
-                    .to_string();
+                    .to_lowercase();
+            } else {
+                let polyt = ElementRef::wrap(child)
+                    .unwrap()
+                    .select(&select(".Polyt")?)
+                    .last();
+
+                if let Some(polyt) = polyt {
+                    for child in polyt.children() {
+                        if child
+                            .value()
+                            .as_element()
+                            .map(|x| x.name() == "br")
+                            .unwrap_or(false)
+                        {
+                            content.push_str("\n");
+                        } else {
+                            content.push_str(
+                                ElementRef::wrap(child)
+                                    .unwrap()
+                                    .text()
+                                    .collect::<String>()
+                                    .trim(),
+                            );
+                        }
+                    }
+                } else {
+                    content = ElementRef::wrap(child)
+                        .unwrap()
+                        .text()
+                        .collect::<Cow<str>>()
+                        .trim()
+                        .to_string();
+                }
             }
+
             cells.push(TableCell {
                 cell_type,
                 content: content.into(),
