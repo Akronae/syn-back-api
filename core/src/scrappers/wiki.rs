@@ -20,6 +20,7 @@ mod noun;
 mod page;
 mod parser;
 mod table;
+mod verb;
 
 #[allow(dead_code)]
 pub async fn import() -> Result<(), SafeError> {
@@ -27,7 +28,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(1),
+        verse_number: Some(2),
     })
     .await?
     .context("no verse")?;

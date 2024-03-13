@@ -1,18 +1,20 @@
 use std::cmp::Ordering;
 
-use anyhow::Context;
+
 use async_recursion::async_recursion;
 use serde::Deserialize;
 use strsim::normalized_damerau_levenshtein;
-use tracing::debug;
+use tracing::{debug, info};
 
 use crate::{
     api::lexicon::lexicon_model::LexiconEntryDefinition,
     borrow::Cow,
     error::SafeError,
-    grammar::{Noun, PartOfSpeech},
-    scrappers::wiki::{noun, page},
-    utils::scrapper::select::select,
+    grammar::{Declension, Noun, Number, PartOfSpeech, Person},
+    scrappers::{
+        wiki::{noun, page},
+    },
+    utils::{scrapper::select::select, str::skip_last::SkipLast},
 };
 
 #[derive(Debug, Deserialize)]
@@ -36,8 +38,9 @@ pub struct WordDetails {
 #[async_recursion(?Send)]
 pub async fn search_word_details(
     word: Cow<str>,
-    pos: &PartOfSpeech,
+    declension: &Declension,
 ) -> Result<WordDetails, SafeError> {
+    let pos = &declension.part_of_speech;
     let url = build_list_url(word.clone(), pos);
     debug!("fetching {}", url.as_ref());
     let response = reqwest::get(url.as_ref()).await?.text().await?;
@@ -59,19 +62,32 @@ pub async fn search_word_details(
         }
     });
 
-    let lemma = lemmas
-        .first()
-        .with_context(|| format!("cannot find entry for {word}"))?;
+    let lemma = lemmas.first();
 
-    let lemma = validate_page(lemma.title.clone(), pos).await?;
+    if let Some(lemma) = lemma {
+        let lemma = validate_page(lemma.title.clone(), pos).await?;
 
-    Ok(WordDetails { lemma })
+        return Ok(WordDetails { lemma });
+    }
+
+    if matches!(pos, PartOfSpeech::Verb)
+        && matches!(declension.person, Some(Person::Third))
+        && matches!(declension.number, Some(Number::Singular))
+        && word.ends_with('ν')
+    {
+        let word = word.chars().skip_last(1).collect::<String>().into();
+        info!("no match found. trying to remove optional (ν) with {word}");
+        return search_word_details(word, declension).await;
+    } else {
+        return Err(format!("cannot find entry for {word}").into());
+    }
 }
 
 #[async_recursion(?Send)]
 async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, SafeError> {
     let doc = page::scrap(lemma.as_ref()).await?;
-    let has_infl_table = doc.select(&select(".NavFrame.grc-decl")?).next().is_some();
+    let has_infl_table = doc.select(&select(".NavFrame.grc-decl")?).next().is_some()
+        || doc.select(&select(".NavFrame .grc-conj")?).next().is_some();
 
     if !has_infl_table {
         let def;
@@ -96,6 +112,7 @@ fn build_list_url(word: Cow<str>, pos: &PartOfSpeech) -> Cow<str> {
             Noun::Common => "Ancient_Greek_nouns+Ancient_Greek_noun_forms",
             Noun::Proper => "Ancient_Greek_proper_nouns+Ancient_Greek_proper_noun_forms",
         },
+        PartOfSpeech::Verb => "Ancient_Greek_verbs+Ancient_Greek_verb_forms",
         _ => todo!(),
     };
     format!("https://en.wiktionary.org/w/api.php?format=json&action=query&list=search&srsearch={word}+incategory:{category}").into()

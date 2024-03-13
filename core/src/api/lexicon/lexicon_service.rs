@@ -1,6 +1,9 @@
 use crate::{
     error::SafeError,
-    grammar::{Case, Declension, Gender, Mood, Number, PartOfSpeech, Person, Tense, Theme, Voice},
+    grammar::{
+        Case, Contraction, Declension, Gender, Mood, Number, PartOfSpeech, Person, Tense, Theme,
+        Voice,
+    },
 };
 
 use super::{
@@ -56,19 +59,23 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         Some(Theme::Athematic) => Some(tense.athematic.as_ref().unwrap()),
         Some(Theme::Thematic) | None => Some(tense.thematic.as_ref().unwrap()),
     }?;
+    let contraction = match declension.contraction {
+        Some(Contraction::Uncontracted) => Some(theme.uncontracted.as_ref().unwrap()),
+        Some(Contraction::Contracted) | None => Some(theme.contracted.as_ref().unwrap()),
+    }?;
     let mood = match declension.mood {
         Some(mood) => match mood {
-            Mood::Indicative => Some(theme.indicative.as_ref().unwrap()),
-            Mood::Imperative => Some(theme.imperative.as_ref().unwrap()),
-            Mood::Optative => Some(theme.optative.as_ref().unwrap()),
-            Mood::Subjunctive => Some(theme.subjunctive.as_ref().unwrap()),
+            Mood::Indicative => Some(contraction.indicative.as_ref().unwrap()),
+            Mood::Imperative => Some(contraction.imperative.as_ref().unwrap()),
+            Mood::Optative => Some(contraction.optative.as_ref().unwrap()),
+            Mood::Subjunctive => Some(contraction.subjunctive.as_ref().unwrap()),
             Mood::Infinitive => {
                 return find_inflection_verb_form(
-                    theme.infinitive.as_ref().unwrap().first().unwrap(),
+                    contraction.infinitive.as_ref().unwrap().first().unwrap(),
                 )
             }
             Mood::Participle => {
-                return find_inflection_noun(declension, theme.participle.as_ref().unwrap())
+                return find_inflection_noun(declension, contraction.participle.as_ref().unwrap())
             }
         },
         None => panic!("No mood found for {:?}", declension),

@@ -14,16 +14,11 @@ pub fn get_word_fix(
     greek: &str,
 ) -> Option<Declension> {
     let onar = Some(Declension {
-        part_of_speech: PartOfSpeech::Noun(Noun::Common),
         gender: Some(Gender::Neuter),
         number: Some(Number::Singular),
-        person: None,
-        mood: None,
         case: Some(Case::Nominative),
-        voice: None,
-        tense: None,
-        theme: None,
         indeclinable: Some(false),
+        ..Declension::partial_default(PartOfSpeech::Noun(Noun::Common))
     });
 
     if book == Book::Matthew && chapter == 0 && verse == 15 && word == 13 {
@@ -279,14 +274,13 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
 
     Declension {
         gender,
-        part_of_speech: pos,
         number,
         person,
         mood,
         case,
         voice,
         tense,
-        theme: None,
         indeclinable: Some(false),
+        ..Declension::partial_default(pos)
     }
 }

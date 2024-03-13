@@ -1,16 +1,17 @@
-use anyhow::Context;
-use scraper::{CaseSensitivity, ElementRef};
+use scraper::ElementRef;
 
 use crate::{
     borrow::Cow,
     error::SafeError,
-    grammar::{Case, DeclensionType, Dialect, Number},
-    utils::scrapper::select::select,
+    grammar::{
+        Case, Contraction, DeclensionType, Dialect, Gender, Mood, Number, Person, Tense, Voice,
+    },
+    utils::{scrapper::select::select, str::skip_last::SkipLastVec},
 };
 
 pub fn parse_declension_table(table: &ElementRef) -> Result<Vec<ParsedWord>, SafeError> {
-    let cells = extract_table_cells(table)?;
-    let words = parse_table(cells);
+    let extracted = extract_table_cells(table)?;
+    let words = parse_table(&extracted);
     Ok(words)
 }
 
@@ -26,7 +27,11 @@ struct TableCell {
     pub x: usize,
     pub y: usize,
 }
-fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, SafeError> {
+struct Table {
+    title: Cow<str>,
+    cells: Vec<TableCell>,
+}
+fn extract_table_cells(table: &scraper::ElementRef) -> Result<Table, SafeError> {
     let mut cells = Vec::<TableCell>::new();
 
     let title = table
@@ -41,8 +46,19 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, Sa
     let selector = select("tr")?;
     let trs = table.select(&selector);
 
-    for (y, tr) in trs.enumerate() {
-        for (x, child) in tr.children().filter(|x| x.value().is_element()).enumerate() {
+    let mut y = 0;
+    let mut x;
+
+    for tr in trs {
+        x = cells
+            .iter()
+            .filter(|c| c.y == y)
+            .map(|c| c.x)
+            .max()
+            .map(|n| n + 1)
+            .unwrap_or(0);
+
+        for child in tr.children().filter(|x| x.value().is_element()) {
             let Some(elem) = child.value().as_element() else {
                 continue;
             };
@@ -62,10 +78,22 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, Sa
                     .trim()
                     .to_lowercase();
             } else {
-                let polyt = ElementRef::wrap(child)
+                let s = select(".Polyt")?;
+                let mut polyts = ElementRef::wrap(child)
                     .unwrap()
-                    .select(&select(".Polyt")?)
-                    .last();
+                    .select(&s)
+                    .collect::<Vec<ElementRef>>();
+                let mut append = "";
+                if polyts
+                    .clone()
+                    .last()
+                    .map(|x| x.text().collect::<String>() == "ν")
+                    .unwrap_or(false)
+                {
+                    append = "(ν)";
+                    polyts = polyts.skip_last(1);
+                }
+                let polyt = polyts.last();
 
                 if let Some(polyt) = polyt {
                     for child in polyt.children() {
@@ -75,7 +103,7 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, Sa
                             .map(|x| x.name() == "br")
                             .unwrap_or(false)
                         {
-                            content.push_str("\n");
+                            content.push('\n');
                         } else {
                             content.push_str(
                                 ElementRef::wrap(child)
@@ -94,73 +122,114 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Vec<TableCell>, Sa
                         .trim()
                         .to_string();
                 }
+
+                content.push_str(append);
             }
 
-            cells.push(TableCell {
-                cell_type,
-                content: content.into(),
-                x,
-                y,
-            });
+            let height = elem
+                .attr("rowspan")
+                .map(|x| x.parse::<usize>().unwrap())
+                .unwrap_or(1);
+            let width = elem
+                .attr("colspan")
+                .map(|x| x.parse::<usize>().unwrap())
+                .unwrap_or(1);
+
+            for h in 0..height {
+                for w in 0..width {
+                    cells.push(TableCell {
+                        cell_type: cell_type.clone(),
+                        content: content.clone().into(),
+                        x: x + w,
+                        y: y + h,
+                    });
+                }
+            }
+
+            x += width;
         }
+
+        y += 1;
     }
 
-    cells = table_insert_header(cells, title);
-
-    Ok(cells)
+    Ok(Table {
+        title: title.into(),
+        cells,
+    })
 }
 
-fn table_insert_header(mut table: Vec<TableCell>, header: String) -> Vec<TableCell> {
-    let max_x = table.iter().map(|x| x.x).max().unwrap_or(0);
-    for cell in &mut table {
-        cell.y += 1;
-    }
-    table.extend((0..max_x + 1).map(|x| TableCell {
-        cell_type: TableCellType::Header,
-        content: header.clone().into(),
-        x,
-        y: 0,
-    }));
-    table
-}
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub enum ParsingComp {
     Number(Number),
     Case(Case),
+    Gender(Gender),
     Declension(DeclensionType),
     Dialect(Dialect),
+    Mood(Mood),
+    Tense(Tense),
+    Voice(Voice),
+    Person(Person),
+    Contraction(Contraction),
 }
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct ParsedWord {
     pub text: Cow<str>,
     pub parsing: Vec<ParsingComp>,
 }
-fn parse_table(cells: Vec<TableCell>) -> Vec<ParsedWord> {
+fn parse_table(table: &Table) -> Vec<ParsedWord> {
     let mut words = Vec::<ParsedWord>::new();
 
-    let headers = cells
+    let headers = table
+        .cells
         .iter()
         .filter(|x| matches!(x.cell_type, TableCellType::Header))
         .collect::<Vec<_>>();
-    let data = cells
+    let data = table
+        .cells
         .iter()
         .filter(|x| matches!(x.cell_type, TableCellType::Data))
         .collect::<Vec<_>>();
 
     for cell in &data {
+        if cell.content.is_empty() {
+            continue;
+        }
+
         let mut parsing = Vec::<ParsingComp>::new();
 
-        let cell_headers = headers
-            .iter()
-            .filter(|x| x.y == cell.y || x.x == cell.x)
-            .collect::<Vec<_>>();
+        let mut cell_headers = Vec::<&TableCell>::new();
+        for x in 0..cell.x {
+            cell_headers.extend(
+                headers
+                    .iter()
+                    .filter(|c| c.y == cell.y && c.x == x)
+                    .collect::<Vec<_>>(),
+            );
+        }
+        let mut found_y_header = false;
+        for y in (0..cell.y).rev() {
+            let h = headers
+                .iter()
+                .filter(|c| c.x == cell.x && c.y == y)
+                .collect::<Vec<_>>();
+
+            if h.is_empty() {
+                if found_y_header {
+                    break;
+                }
+            } else {
+                found_y_header = true;
+            }
+            cell_headers.extend(h);
+        }
+
         if cell_headers
             .iter()
             .any(|x| x.content.eq_ignore_ascii_case("notes:"))
         {
             continue;
         }
+
         for header in &cell_headers {
             if header.content.contains("singular") {
                 parsing.push(ParsingComp::Number(Number::Singular));
@@ -192,6 +261,82 @@ fn parse_table(cells: Vec<TableCell>) -> Vec<ParsedWord> {
             if header.content.contains("attic") {
                 parsing.push(ParsingComp::Dialect(Dialect::Attic));
             }
+            if header.content == ("middle/passive") {
+                parsing.push(ParsingComp::Voice(Voice::Middle));
+                parsing.push(ParsingComp::Voice(Voice::Passive));
+            }
+            if header.content == ("middle") {
+                parsing.push(ParsingComp::Voice(Voice::Middle));
+            }
+            if header.content == ("passive") {
+                parsing.push(ParsingComp::Voice(Voice::Passive));
+            }
+            if header.content == ("active") {
+                parsing.push(ParsingComp::Voice(Voice::Active));
+            }
+            if table.title.starts_with("present:") {
+                parsing.push(ParsingComp::Tense(Tense::Present));
+            }
+            if table.title.starts_with("imperfect:") {
+                parsing.push(ParsingComp::Tense(Tense::Imperfect));
+            }
+            if table.title.starts_with("future:") {
+                parsing.push(ParsingComp::Tense(Tense::Future));
+            }
+            if table.title.starts_with("aorist:") {
+                parsing.push(ParsingComp::Tense(Tense::Aorist));
+            }
+            if table.title.starts_with("perfect:") {
+                parsing.push(ParsingComp::Tense(Tense::Perfect));
+            }
+            if table.title.starts_with("pluperfect:") {
+                parsing.push(ParsingComp::Tense(Tense::Pluperfect));
+            }
+            if table.title.starts_with("future perfect:") {
+                parsing.push(ParsingComp::Tense(Tense::FuturePerfect));
+            }
+            if table.title.ends_with("(contracted)") {
+                parsing.push(ParsingComp::Contraction(Contraction::Contracted));
+            }
+            if table.title.ends_with("(uncontracted)") {
+                parsing.push(ParsingComp::Contraction(Contraction::Uncontracted));
+            }
+            if header.content == ("participle") {
+                parsing.push(ParsingComp::Mood(Mood::Participle));
+            }
+            if header.content == ("infinitive") {
+                parsing.push(ParsingComp::Mood(Mood::Infinitive));
+            }
+            if header.content == ("indicative") {
+                parsing.push(ParsingComp::Mood(Mood::Indicative));
+            }
+            if header.content == ("subjunctive") {
+                parsing.push(ParsingComp::Mood(Mood::Subjunctive));
+            }
+            if header.content == ("optative") {
+                parsing.push(ParsingComp::Mood(Mood::Optative));
+            }
+            if header.content == ("imperative") {
+                parsing.push(ParsingComp::Mood(Mood::Imperative));
+            }
+            if header.content == ("first") {
+                parsing.push(ParsingComp::Person(Person::First));
+            }
+            if header.content == ("second") {
+                parsing.push(ParsingComp::Person(Person::Second));
+            }
+            if header.content == ("third") {
+                parsing.push(ParsingComp::Person(Person::Third));
+            }
+            if header.content == ("m") {
+                parsing.push(ParsingComp::Gender(Gender::Masculine));
+            }
+            if header.content == ("f") {
+                parsing.push(ParsingComp::Gender(Gender::Feminine));
+            }
+            if header.content == ("n") {
+                parsing.push(ParsingComp::Gender(Gender::Neuter));
+            }
         }
 
         words.push(ParsedWord {
@@ -200,5 +345,7 @@ fn parse_table(cells: Vec<TableCell>) -> Vec<ParsedWord> {
         });
     }
 
+    words.sort();
+    words.dedup();
     words
 }

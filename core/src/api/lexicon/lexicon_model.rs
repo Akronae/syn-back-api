@@ -41,8 +41,15 @@ pub struct VerbInflectionTenses {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct VerbInflectionThemes {
-    pub thematic: Option<VerbInflectionMoods>,
-    pub athematic: Option<VerbInflectionMoods>,
+    pub thematic: Option<VerbInflectionContractions>,
+    pub athematic: Option<VerbInflectionContractions>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionContractions {
+    pub contracted: Option<VerbInflectionMoods>,
+    pub uncontracted: Option<VerbInflectionMoods>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -70,6 +77,7 @@ pub struct VerbInflectionVoices {
 pub struct VerbInflectionNumbers {
     pub singular: Option<VerbInflectionPersons>,
     pub plural: Option<VerbInflectionPersons>,
+    pub dual: Option<VerbInflectionPersons>,
 }
 
 #[serde_with::skip_serializing_none]
