@@ -11,7 +11,7 @@ static DB: OnceCell<Database> = OnceCell::new();
 pub async fn get_db() -> Result<Database, SafeError> {
     if DB.get().is_none() {
         let mut client_options = ClientOptions::parse(Config.get::<String>(EnvVar::MongoUri)?)
-            .await
+            // .await
             .with_context(|| "Failed to parse MongoDB URI")?;
 
         client_options.app_name = Some("My App".to_string());

@@ -44,7 +44,6 @@ pub async fn parse_word(
             verb: Some(x.clone()),
             ..Default::default()
         }));
-        dbg!(verb.inflections);
     } else {
         todo!()
     }
