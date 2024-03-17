@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use crate::grammar::Declension;
+use crate::grammar::{Declension, Dialect};
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LexiconEntry {
     pub lemma: String,
-    pub inflections: Vec<WordInflection>,
+    pub inflections: Vec<Box<WordInflection>>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
 

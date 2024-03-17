@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 
-
 use async_recursion::async_recursion;
 use serde::Deserialize;
 use strsim::normalized_damerau_levenshtein;
@@ -11,9 +10,7 @@ use crate::{
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, Noun, Number, PartOfSpeech, Person},
-    scrappers::{
-        wiki::{noun, page},
-    },
+    scrappers::wiki::{noun, page},
     utils::{scrapper::select::select, str::skip_last::SkipLast},
 };
 
@@ -113,6 +110,7 @@ fn build_list_url(word: Cow<str>, pos: &PartOfSpeech) -> Cow<str> {
             Noun::Proper => "Ancient_Greek_proper_nouns+Ancient_Greek_proper_noun_forms",
         },
         PartOfSpeech::Verb => "Ancient_Greek_verbs+Ancient_Greek_verb_forms",
+        PartOfSpeech::Article(_) => "Ancient_Greek_articles+Ancient_Greek_article_forms",
         _ => todo!(),
     };
     format!("https://en.wiktionary.org/w/api.php?format=json&action=query&list=search&srsearch={word}+incategory:{category}").into()

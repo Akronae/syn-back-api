@@ -261,6 +261,18 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             if header.content.contains("attic") {
                 parsing.push(ParsingComp::Dialect(Dialect::Attic));
             }
+            if header.content.contains("koine") {
+                parsing.push(ParsingComp::Dialect(Dialect::Koine));
+            }
+            if header.content.contains("epic") {
+                parsing.push(ParsingComp::Dialect(Dialect::Epic));
+            }
+            if header.content.contains("laconian") {
+                parsing.push(ParsingComp::Dialect(Dialect::Laconian));
+            }
+            if header.content.contains("doric") {
+                parsing.push(ParsingComp::Dialect(Dialect::Doric));
+            }
             if header.content == ("middle/passive") {
                 parsing.push(ParsingComp::Voice(Voice::Middle));
                 parsing.push(ParsingComp::Voice(Voice::Passive));

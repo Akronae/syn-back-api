@@ -30,19 +30,21 @@ pub async fn parse_word(
     if let PartOfSpeech::Noun(_) = declension.part_of_speech {
         let noun = noun::scrap_noun(&details.lemma, &declension).await?;
         if noun.inflection.is_some() {
-            inflections.push(WordInflection {
+            inflections.push(Box::new(WordInflection {
                 noun: noun.inflection,
                 ..Default::default()
-            });
+            }));
         }
         definitions = noun.definitions;
         declension = noun.declension;
     } else if PartOfSpeech::Verb == declension.part_of_speech {
         let verb = verb::scrap_verb(&details.lemma, &declension).await?;
         definitions = verb.definitions;
-        inflections.extend(verb.inflections.iter().map(|x| WordInflection {
-            verb: Some(x.clone()),
-            ..Default::default()
+        inflections.extend(verb.inflections.iter().map(|x| {
+            Box::new(WordInflection {
+                verb: Some(x.clone()),
+                ..Default::default()
+            })
         }));
     } else {
         todo!()

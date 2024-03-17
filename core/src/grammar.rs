@@ -292,4 +292,7 @@ pub struct Verse {
 pub enum Dialect {
     Attic,
     Koine,
+    Epic,
+    Laconian,
+    Doric,
 }

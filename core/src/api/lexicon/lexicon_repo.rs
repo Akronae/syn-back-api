@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use mongodb::{
     bson::{doc, Document},
     options::IndexOptions,
@@ -8,7 +9,7 @@ use nameof::name_of;
 use crate::{
     borrow::Cow,
     error::{MapErrSafe, SafeError},
-    grammar::{Case, Declension, Gender, Number, PartOfSpeech, Tense},
+    grammar::{Declension, PartOfSpeech},
     persistence::get_db,
     utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
 };
@@ -178,8 +179,10 @@ impl Declension {
             s.push("[]".into());
 
             s.push("contracted".into());
+        } else if let PartOfSpeech::Article(_) = self.part_of_speech {
+            s.push("article".into());
         } else {
-            return Err(format!("part of speech not supported {:?}", self.part_of_speech).into());
+            return Err(anyhow!("part of speech not supported {:?}", self.part_of_speech).into());
         }
 
         Ok(s.join("."))
