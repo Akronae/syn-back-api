@@ -15,6 +15,23 @@ pub fn parse_declension_table(table: &ElementRef) -> Result<Vec<ParsedWord>, Saf
     Ok(words)
 }
 
+pub fn get_words_dialects(words: &[ParsedWord]) -> Vec<Dialect> {
+    let mut dialects = words
+        .iter()
+        .flat_map(|x| {
+            x.parsing.iter().filter_map(|y| {
+                if let ParsingComp::Dialect(d) = y {
+                    Some(d.clone())
+                } else {
+                    None
+                }
+            })
+        })
+        .collect::<Vec<Dialect>>();
+    dialects.dedup();
+    return dialects;
+}
+
 #[derive(Debug, Clone)]
 enum TableCellType {
     Header,
@@ -258,21 +275,6 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             if header.content.contains("second declension") {
                 parsing.push(ParsingComp::Declension(DeclensionType::Second));
             }
-            if header.content.contains("attic") {
-                parsing.push(ParsingComp::Dialect(Dialect::Attic));
-            }
-            if header.content.contains("koine") {
-                parsing.push(ParsingComp::Dialect(Dialect::Koine));
-            }
-            if header.content.contains("epic") {
-                parsing.push(ParsingComp::Dialect(Dialect::Epic));
-            }
-            if header.content.contains("laconian") {
-                parsing.push(ParsingComp::Dialect(Dialect::Laconian));
-            }
-            if header.content.contains("doric") {
-                parsing.push(ParsingComp::Dialect(Dialect::Doric));
-            }
             if header.content == ("middle/passive") {
                 parsing.push(ParsingComp::Voice(Voice::Middle));
                 parsing.push(ParsingComp::Voice(Voice::Passive));
@@ -285,33 +287,6 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             }
             if header.content == ("active") {
                 parsing.push(ParsingComp::Voice(Voice::Active));
-            }
-            if table.title.starts_with("present:") {
-                parsing.push(ParsingComp::Tense(Tense::Present));
-            }
-            if table.title.starts_with("imperfect:") {
-                parsing.push(ParsingComp::Tense(Tense::Imperfect));
-            }
-            if table.title.starts_with("future:") {
-                parsing.push(ParsingComp::Tense(Tense::Future));
-            }
-            if table.title.starts_with("aorist:") {
-                parsing.push(ParsingComp::Tense(Tense::Aorist));
-            }
-            if table.title.starts_with("perfect:") {
-                parsing.push(ParsingComp::Tense(Tense::Perfect));
-            }
-            if table.title.starts_with("pluperfect:") {
-                parsing.push(ParsingComp::Tense(Tense::Pluperfect));
-            }
-            if table.title.starts_with("future perfect:") {
-                parsing.push(ParsingComp::Tense(Tense::FuturePerfect));
-            }
-            if table.title.ends_with("(contracted)") {
-                parsing.push(ParsingComp::Contraction(Contraction::Contracted));
-            }
-            if table.title.ends_with("(uncontracted)") {
-                parsing.push(ParsingComp::Contraction(Contraction::Uncontracted));
             }
             if header.content == ("participle") {
                 parsing.push(ParsingComp::Mood(Mood::Participle));
@@ -349,6 +324,49 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             if header.content == ("n") {
                 parsing.push(ParsingComp::Gender(Gender::Neuter));
             }
+        }
+
+        if table.title.starts_with("present:") {
+            parsing.push(ParsingComp::Tense(Tense::Present));
+        }
+        if table.title.starts_with("imperfect:") {
+            parsing.push(ParsingComp::Tense(Tense::Imperfect));
+        }
+        if table.title.starts_with("future:") {
+            parsing.push(ParsingComp::Tense(Tense::Future));
+        }
+        if table.title.starts_with("aorist:") {
+            parsing.push(ParsingComp::Tense(Tense::Aorist));
+        }
+        if table.title.starts_with("perfect:") {
+            parsing.push(ParsingComp::Tense(Tense::Perfect));
+        }
+        if table.title.starts_with("pluperfect:") {
+            parsing.push(ParsingComp::Tense(Tense::Pluperfect));
+        }
+        if table.title.starts_with("future perfect:") {
+            parsing.push(ParsingComp::Tense(Tense::FuturePerfect));
+        }
+        if table.title.ends_with("(contracted)") {
+            parsing.push(ParsingComp::Contraction(Contraction::Contracted));
+        }
+        if table.title.ends_with("(uncontracted)") {
+            parsing.push(ParsingComp::Contraction(Contraction::Uncontracted));
+        }
+        if table.title.contains("attic") {
+            parsing.push(ParsingComp::Dialect(Dialect::Attic));
+        }
+        if table.title.contains("koine") {
+            parsing.push(ParsingComp::Dialect(Dialect::Koine));
+        }
+        if table.title.contains("epic") {
+            parsing.push(ParsingComp::Dialect(Dialect::Epic));
+        }
+        if table.title.contains("laconian") {
+            parsing.push(ParsingComp::Dialect(Dialect::Laconian));
+        }
+        if table.title.contains("doric") {
+            parsing.push(ParsingComp::Dialect(Dialect::Doric));
         }
 
         words.push(ParsedWord {

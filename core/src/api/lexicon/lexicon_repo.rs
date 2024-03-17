@@ -138,6 +138,9 @@ impl Declension {
                 Some(x) => str(x),
                 None => return Err("case required".to_string().into()),
             });
+
+            s.push("[]".into());
+            s.push("contracted".into());
         } else if PartOfSpeech::Verb == self.part_of_speech {
             s.push("verb".into());
 
@@ -177,10 +180,11 @@ impl Declension {
             });
 
             s.push("[]".into());
-
             s.push("contracted".into());
         } else if let PartOfSpeech::Article(_) = self.part_of_speech {
             s.push("article".into());
+            s.push("[]".into());
+            s.push("contracted".into());
         } else {
             return Err(anyhow!("part of speech not supported {:?}", self.part_of_speech).into());
         }

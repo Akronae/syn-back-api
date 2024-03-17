@@ -28,24 +28,14 @@ pub async fn parse_word(
     let mut declension = declension.clone();
 
     if let PartOfSpeech::Noun(_) = declension.part_of_speech {
-        let noun = noun::scrap_noun(&details.lemma, &declension).await?;
-        if noun.inflection.is_some() {
-            inflections.push(Box::new(WordInflection {
-                noun: noun.inflection,
-                ..Default::default()
-            }));
-        }
+        let mut noun = noun::scrap_noun(&details.lemma, &declension).await?;
+        inflections.extend(noun.inflections.iter_mut().map(|x| Box::new(x.to_owned())));
         definitions = noun.definitions;
         declension = noun.declension;
     } else if PartOfSpeech::Verb == declension.part_of_speech {
-        let verb = verb::scrap_verb(&details.lemma, &declension).await?;
+        let mut verb = verb::scrap_verb(&details.lemma, &declension).await?;
         definitions = verb.definitions;
-        inflections.extend(verb.inflections.iter().map(|x| {
-            Box::new(WordInflection {
-                verb: Some(x.clone()),
-                ..Default::default()
-            })
-        }));
+        inflections.extend(verb.inflections.iter_mut().map(|x| Box::new(x.to_owned())));
     } else {
         todo!()
     }

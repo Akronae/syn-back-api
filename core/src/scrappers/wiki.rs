@@ -1,6 +1,5 @@
 use anyhow::Context;
 
-
 use tracing::{debug, info};
 
 use crate::{
@@ -61,8 +60,13 @@ pub async fn import() -> Result<(), SafeError> {
         verse.words[index] = word.clone();
         VerseRepo::update_one(verse).await?;
         debug!(
-            "updated verse {} {} {} {} word {}",
-            verse.collection, verse.book, verse.chapter_number, verse.verse_number, index
+            "updated verse {} {} {} {} word {} '{}'",
+            verse.collection,
+            verse.book,
+            verse.chapter_number,
+            verse.verse_number,
+            index,
+            word.text
         );
         Ok(())
     }

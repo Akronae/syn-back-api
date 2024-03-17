@@ -1,11 +1,11 @@
 use crate::{
     api::lexicon::lexicon_model::{
         LexiconEntryDefinition, NounInflectionCases, NounInflectionForm, NounInflectionGenders,
-        NounInflectionNumbers,
+        NounInflectionNumbers, WordInflection,
     },
     borrow::Cow,
     error::SafeError,
-    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech},
+    grammar::{Case, Declension, Dialect, Gender, Noun, Number, PartOfSpeech},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
@@ -15,11 +15,11 @@ use scraper::Html;
 
 use super::{
     definition, page,
-    table::{ParsedWord, ParsingComp},
+    table::{get_words_dialects, ParsedWord, ParsingComp},
 };
 
 pub struct ScrappedNoun {
-    pub inflection: Option<NounInflectionGenders>,
+    pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
     pub declension: Declension,
 }
@@ -43,14 +43,9 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
     let mut declension = declension.clone();
     declension.gender = Some(gender);
 
-    let mut inflection = None;
-    if !declension.indeclinable.unwrap_or(false) {
-        let selector = select(".NavFrame")?;
-        let decl_table = doc
-            .select(&selector)
-            .next()
-            .context("cannot find declension table")?;
-
+    let mut inflections = vec![];
+    let selector = select(".NavFrame")?;
+    for decl_table in doc.select(&selector) {
         let words = parse_declension_table(&decl_table)?;
         let infl = parsed_words_to_inflection(&words);
 
@@ -60,7 +55,12 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
             Gender::Masculine => genders.masculine = Some(infl),
             Gender::Neuter => genders.neuter = Some(infl),
         }
-        inflection = Some(genders);
+        let dialects = get_words_dialects(&words);
+        inflections.push(WordInflection {
+            dialects,
+            noun: Some(genders),
+            ..Default::default()
+        });
     }
 
     let noun = match declension.part_of_speech {
@@ -70,7 +70,7 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
     let definitions = scrap_noun_defs(&doc, &noun)?;
 
     Ok(ScrappedNoun {
-        inflection,
+        inflections,
         definitions,
         declension,
     })

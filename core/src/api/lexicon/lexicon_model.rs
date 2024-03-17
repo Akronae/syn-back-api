@@ -20,6 +20,7 @@ pub enum LexiconEntryDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct WordInflection {
+    pub dialects: Vec<Dialect>,
     pub noun: Option<NounInflectionGenders>,
     pub verb: Option<VerbInflectionTenses>,
 }

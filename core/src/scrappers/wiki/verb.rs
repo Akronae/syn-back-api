@@ -1,15 +1,13 @@
-
-
 use crate::{
     api::lexicon::lexicon_model::{
-        LexiconEntryDefinition, VerbInflectionContractions,
-        VerbInflectionForm, VerbInflectionMoods, VerbInflectionNumbers, VerbInflectionPersons,
-        VerbInflectionTenses, VerbInflectionThemes, VerbInflectionVoices,
+        LexiconEntryDefinition, VerbInflectionContractions, VerbInflectionForm,
+        VerbInflectionMoods, VerbInflectionNumbers, VerbInflectionPersons, VerbInflectionTenses,
+        VerbInflectionThemes, VerbInflectionVoices, WordInflection,
     },
     error::SafeError,
     grammar::{Contraction, Declension, Mood, Number, Person, Tense, Voice},
     scrappers::wiki::table::parse_declension_table,
-    utils::scrapper::select::{select},
+    utils::scrapper::select::select,
 };
 
 use anyhow::Context;
@@ -17,11 +15,11 @@ use scraper::Html;
 
 use super::{
     definition, noun, page,
-    table::{ParsedWord, ParsingComp},
+    table::{get_words_dialects, ParsedWord, ParsingComp},
 };
 
 pub struct ScrappedVerb {
-    pub inflections: Vec<VerbInflectionTenses>,
+    pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
 pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<ScrappedVerb, SafeError> {
@@ -30,7 +28,7 @@ pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<Scrappe
     let selector = select(".NavFrame")?;
     let decl_tables = doc.select(&selector);
 
-    let mut inflections = vec![VerbInflectionTenses::default()];
+    let mut inflections = vec![WordInflection::default()];
     for table in decl_tables {
         let words = parse_declension_table(&table)?;
         let infl = parsed_words_to_inflection(&words);
@@ -53,18 +51,28 @@ pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<Scrappe
                     words
                 )
             })?;
+        let dialects = get_words_dialects(&words);
+
         let mut avail_infl = inflections.iter_mut().find_map(|x| {
-            if grab_tense_field(x, tense).is_none() {
+            if grab_tense_field(x, tense).is_none()
+                && x.dialects.iter().all(|y| dialects.contains(y))
+            {
                 Some(x)
             } else {
                 None
             }
         });
+
         if avail_infl.is_none() {
-            inflections.push(VerbInflectionTenses::default());
+            inflections.push(WordInflection {
+                dialects,
+                ..Default::default()
+            });
             avail_infl = inflections.last_mut();
         }
-        set_tense_field(avail_infl.unwrap(), tense, infl);
+        let avail_infl = avail_infl.as_mut().unwrap();
+
+        set_tense_field(avail_infl, tense, infl);
     }
 
     let definitions = scrap_verb_defs(&doc)?;
@@ -76,9 +84,10 @@ pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<Scrappe
 }
 
 fn grab_tense_field<'a>(
-    tenses: &'a mut VerbInflectionTenses,
+    infl: &'a mut WordInflection,
     tense: &Tense,
 ) -> Option<&'a mut VerbInflectionThemes> {
+    let tenses = infl.verb.as_mut()?;
     match tense {
         Tense::Present => tenses.present.as_mut(),
         Tense::Imperfect => tenses.imperfect.as_mut(),
@@ -92,11 +101,8 @@ fn grab_tense_field<'a>(
     }
 }
 
-fn set_tense_field(
-    tenses: &mut VerbInflectionTenses,
-    tense: &Tense,
-    value: VerbInflectionThemes,
-) {
+fn set_tense_field(infl: &mut WordInflection, tense: &Tense, value: VerbInflectionThemes) {
+    let tenses = infl.verb.get_or_insert(VerbInflectionTenses::default());
     match tense {
         Tense::Present => tenses.present = Some(value),
         Tense::Imperfect => tenses.imperfect = Some(value),

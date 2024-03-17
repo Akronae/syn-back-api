@@ -1,5 +1,3 @@
-
-
 use scraper::{selectable::Selectable, ElementRef, Html};
 use tracing::debug;
 
@@ -38,6 +36,5 @@ pub async fn scrap(lemma: &str) -> Result<Html, SafeError> {
 }
 
 fn build_scrap_url(lemma: &str) -> String {
-    // format!("https://en.wiktionary.org/api/rest_v1/page/html/{}", lemma)
     format!("https://en.wiktionary.org/wiki/{}", lemma)
 }

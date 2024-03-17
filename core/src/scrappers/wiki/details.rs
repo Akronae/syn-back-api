@@ -4,6 +4,7 @@ use async_recursion::async_recursion;
 use serde::Deserialize;
 use strsim::normalized_damerau_levenshtein;
 use tracing::{debug, info};
+use unidecode::unidecode;
 
 use crate::{
     api::lexicon::lexicon_model::LexiconEntryDefinition,
@@ -48,11 +49,13 @@ pub async fn search_word_details(
     lemmas.sort_by(|a, b| {
         let a_dst = normalized_damerau_levenshtein(&a.title, &word);
         let b_dst = normalized_damerau_levenshtein(&b.title, &word);
+        let a_no_dia_dst = normalized_damerau_levenshtein(&unidecode(&a.title), &unidecode(&word));
+        let b_no_dia_dst = normalized_damerau_levenshtein(&unidecode(&b.title), &unidecode(&word));
         debug!(
-            "comparing {} ({a_dst}) with {} ({b_dst}) to {word}",
+            "comparing {} ({a_dst} + {a_no_dia_dst}) with {} ({b_dst} + {b_no_dia_dst}) to {word}",
             a.title, b.title
         );
-        if a_dst < b_dst {
+        if a_dst + a_no_dia_dst < b_dst + b_no_dia_dst {
             Ordering::Greater
         } else {
             Ordering::Less
