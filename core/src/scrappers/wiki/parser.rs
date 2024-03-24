@@ -1,11 +1,11 @@
 use tracing::*;
 
 use crate::{
-    api::lexicon::lexicon_model::{LexiconEntry},
+    api::lexicon::lexicon_model::LexiconEntry,
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, PartOfSpeech},
-    scrappers::wiki::{article, conjunction, details::search_word_details, noun, verb},
+    scrappers::wiki::{article, conjunction, details::search_word_details, noun, pronoun, verb},
 };
 
 pub struct ParseWordResult {
@@ -41,6 +41,15 @@ pub async fn parse_word(
         definitions = article.definitions;
         inflections.extend(
             article
+                .inflections
+                .iter_mut()
+                .map(|x| Box::new(x.to_owned())),
+        );
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Pronoun(_)) {
+        let mut pronoun = pronoun::scrap_pronoun(&details.lemma).await?;
+        definitions = pronoun.definitions;
+        inflections.extend(
+            pronoun
                 .inflections
                 .iter_mut()
                 .map(|x| Box::new(x.to_owned())),

@@ -1,5 +1,3 @@
-
-
 use anyhow::Context;
 
 use tracing::{debug, info};
@@ -26,6 +24,7 @@ mod details;
 mod noun;
 mod page;
 mod parser;
+mod pronoun;
 mod table;
 mod verb;
 

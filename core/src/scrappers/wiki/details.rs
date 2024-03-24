@@ -1,5 +1,3 @@
-
-
 use async_recursion::async_recursion;
 use serde::Deserialize;
 
@@ -17,7 +15,7 @@ use crate::{
     },
 };
 
-use super::{article, verb};
+use super::{article, pronoun, verb};
 
 #[derive(Debug, Deserialize)]
 struct ListResponseQuerySearch {
@@ -99,8 +97,10 @@ async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, 
             def = verb::scrap_verb_defs(&doc)?;
         } else if let PartOfSpeech::Article(_) = pos {
             def = article::scrap_article_defs(&doc)?;
+        } else if let PartOfSpeech::Pronoun(_) = pos {
+            def = pronoun::scrap_pronoun_defs(&doc)?;
         } else {
-            todo!()
+            panic!("unsupported part of speech: {:?}", pos);
         }
 
         if let Some(LexiconEntryDefinition::FormOf(formof)) = def.first() {

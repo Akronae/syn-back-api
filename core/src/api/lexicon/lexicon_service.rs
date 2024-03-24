@@ -42,6 +42,10 @@ impl WordInflection {
             let article = self.article.as_ref().unwrap();
 
             return find_inflection_noun(declension, article);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Pronoun(_)) {
+            let pronoun = self.pronoun.as_ref().unwrap();
+
+            return find_inflection_noun(declension, pronoun);
         } else {
             panic!(
                 "Unsupported part of speech: {:?}",
