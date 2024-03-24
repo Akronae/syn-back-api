@@ -1,11 +1,11 @@
 use tracing::*;
 
 use crate::{
-    api::lexicon::lexicon_model::{LexiconEntry, WordInflection},
+    api::lexicon::lexicon_model::{LexiconEntry},
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, PartOfSpeech},
-    scrappers::wiki::{details::search_word_details, noun, verb},
+    scrappers::wiki::{article, conjunction, details::search_word_details, noun, verb},
 };
 
 pub struct ParseWordResult {
@@ -33,11 +33,26 @@ pub async fn parse_word(
         definitions = noun.definitions;
         declension = noun.declension;
     } else if PartOfSpeech::Verb == declension.part_of_speech {
-        let mut verb = verb::scrap_verb(&details.lemma, &declension).await?;
+        let mut verb = verb::scrap_verb(&details.lemma).await?;
         definitions = verb.definitions;
         inflections.extend(verb.inflections.iter_mut().map(|x| Box::new(x.to_owned())));
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Article(_)) {
+        let mut article = article::scrap_article(&details.lemma).await?;
+        definitions = article.definitions;
+        inflections.extend(
+            article
+                .inflections
+                .iter_mut()
+                .map(|x| Box::new(x.to_owned())),
+        );
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction) {
+        let conjunction = conjunction::scrap_conjunction(&details.lemma).await?;
+        definitions = conjunction.definitions;
     } else {
-        todo!()
+        panic!(
+            "Unsupported part of speech: {:?}",
+            declension.part_of_speech
+        );
     }
 
     Ok(ParseWordResult {

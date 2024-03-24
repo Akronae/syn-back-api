@@ -21,15 +21,33 @@ pub fn get_words_dialects(words: &[ParsedWord]) -> Vec<Dialect> {
         .flat_map(|x| {
             x.parsing.iter().filter_map(|y| {
                 if let ParsingComp::Dialect(d) = y {
-                    Some(d.clone())
+                    Some(*d)
                 } else {
                     None
                 }
             })
         })
         .collect::<Vec<Dialect>>();
+    dialects.sort();
     dialects.dedup();
-    return dialects;
+    dialects
+}
+
+pub fn get_words_tenses(words: &[ParsedWord]) -> Vec<Tense> {
+    let mut tenses = words
+        .iter()
+        .flat_map(|x| {
+            x.parsing.iter().filter_map(|y| {
+                if let ParsingComp::Tense(d) = y {
+                    Some(*d)
+                } else {
+                    None
+                }
+            })
+        })
+        .collect::<Vec<Tense>>();
+    tenses.dedup();
+    tenses
 }
 
 #[derive(Debug, Clone)]
@@ -208,7 +226,7 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
         .collect::<Vec<_>>();
 
     for cell in &data {
-        if cell.content.is_empty() {
+        if cell.content.is_empty() || cell.content == "—" {
             continue;
         }
 
@@ -315,13 +333,13 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             if header.content == ("third") {
                 parsing.push(ParsingComp::Person(Person::Third));
             }
-            if header.content == ("m") {
+            if header.content == ("m") || header.content == ("masculine") {
                 parsing.push(ParsingComp::Gender(Gender::Masculine));
             }
-            if header.content == ("f") {
+            if header.content == ("f") || header.content == ("feminine") {
                 parsing.push(ParsingComp::Gender(Gender::Feminine));
             }
-            if header.content == ("n") {
+            if header.content == ("n") || header.content == ("neuter") {
                 parsing.push(ParsingComp::Gender(Gender::Neuter));
             }
         }

@@ -1,5 +1,3 @@
-
-
 use anyhow::Context;
 
 use scraper::{Element, ElementRef};
@@ -30,12 +28,20 @@ pub fn extract_word_defs(
             .select(&select(".form-of-definition")?)
             .next()
         {
+            // let text = formof
+            //     .select(&select(".form-of-definition-link .Polyt")?)
+            //     .next()
+            //     .with_context(|| "cannot find form-of-definition-link".to_string())?
+            //     .text()
+            //     .collect::<Cow<str>>()
+            //     .trim()
+            //     .to_string();
             let text = formof
-                .select(&select(".form-of-definition-link .Polyt")?)
+                .select(&select(".form-of-definition-link .Polyt a")?)
                 .next()
                 .with_context(|| "cannot find form-of-definition-link".to_string())?
-                .text()
-                .collect::<Cow<str>>()
+                .attr("title")
+                .with_context(|| "no title attribute")?
                 .trim()
                 .to_string();
             definitions.push(LexiconEntryDefinition::FormOf(text));

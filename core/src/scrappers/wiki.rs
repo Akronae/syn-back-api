@@ -1,3 +1,5 @@
+
+
 use anyhow::Context;
 
 use tracing::{debug, info};
@@ -10,11 +12,15 @@ use crate::{
         },
         verse::{verse_model::VerseFilter, verse_repo::VerseRepo},
     },
+    borrow::Cow,
     error::SafeError,
-    grammar::{Declension, Verse, Word},
+    grammar::{Declension, PartOfSpeech, Verse, Word},
     task::sleep_ms,
+    utils::str::closest::closest,
 };
 
+mod article;
+mod conjunction;
 mod definition;
 mod details;
 mod noun;
@@ -38,7 +44,9 @@ pub async fn import() -> Result<(), SafeError> {
         word: &str,
         declension: &Declension,
     ) -> Result<Option<LexiconEntry>, SafeError> {
-        if declension.indeclinable.unwrap_or(false) {
+        if declension.indeclinable.unwrap_or(false)
+            || declension.part_of_speech == PartOfSpeech::Conjunction
+        {
             return LexiconRepo::find_one(LexiconFilter {
                 lemma: Some(word.to_owned()),
                 ..Default::default()
@@ -57,6 +65,27 @@ pub async fn import() -> Result<(), SafeError> {
     }
 
     async fn update_word(verse: &mut Verse, word: &Word, index: usize) -> Result<(), SafeError> {
+        let old = verse.words[index].clone();
+        let confirmed = cliclack::confirm(format!(
+            "change {} -> {} at word #{index} of verse {}:{}:{}?\n  '{}'",
+            old.text,
+            word.text,
+            verse.book,
+            verse.chapter_number,
+            verse.verse_number,
+            verse
+                .words
+                .iter()
+                .map(|w| w.text.clone())
+                .collect::<Vec<String>>()
+                .join(" ")
+        ))
+        .initial_value(true)
+        .interact()?;
+        if !confirmed {
+            return Ok(());
+        }
+
         verse.words[index] = word.clone();
         VerseRepo::update_one(verse).await?;
         debug!(
@@ -72,7 +101,7 @@ pub async fn import() -> Result<(), SafeError> {
     }
 
     for (word_i, word) in &mut verse.words.clone().iter_mut().enumerate() {
-        sleep_ms(1000).await;
+        debug!("processing #{word_i} word {}", word.text);
 
         let parsed;
         let mut parsed_decl = None;
@@ -81,18 +110,24 @@ pub async fn import() -> Result<(), SafeError> {
             parsed = already;
         } else {
             debug!("{} not in lexicon, fetching", word.text);
+            sleep_ms(1000).await;
             let res = parser::parse_word(word.text.clone().into(), &word.declension).await?;
             parsed = res.entry;
             parsed_decl = Some(res.declension);
         }
 
         if let Some(parsed_inflection) = parsed.inflections.first() {
-            let inflected = parsed_inflection.find_inflection(&word.declension);
+            let inflecteds = parsed_inflection.find_inflection(&word.declension);
+            let inflecteds = inflecteds
+                .iter()
+                .map(|x| x.clone().into())
+                .collect::<Vec<Cow<str>>>();
+            let close = closest(word.text.clone().into(), &inflecteds);
 
-            if let Some(inflected) = inflected {
+            if let Some(inflected) = close {
                 if inflected != word.text {
                     debug!("{} changing to {}", word.text, inflected);
-                    word.text = inflected.to_owned();
+                    word.text = inflected.into();
                     update_word(&mut verse, word, word_i).await?;
                 } else {
                     debug!("{} already inflected", word.text);

@@ -5,7 +5,7 @@ use crate::{
         VerbInflectionThemes, VerbInflectionVoices, WordInflection,
     },
     error::SafeError,
-    grammar::{Contraction, Declension, Mood, Number, Person, Tense, Voice},
+    grammar::{Contraction, Mood, Number, Person, Tense, Voice},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
@@ -15,14 +15,14 @@ use scraper::Html;
 
 use super::{
     definition, noun, page,
-    table::{get_words_dialects, ParsedWord, ParsingComp},
+    table::{get_words_dialects, get_words_tenses, ParsedWord, ParsingComp},
 };
 
 pub struct ScrappedVerb {
     pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
-pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<ScrappedVerb, SafeError> {
+pub async fn scrap_verb(lemma: &str) -> Result<ScrappedVerb, SafeError> {
     let doc = page::scrap(lemma).await?;
 
     let selector = select(".NavFrame")?;
@@ -32,25 +32,14 @@ pub async fn scrap_verb(lemma: &str, _declension: &Declension) -> Result<Scrappe
     for table in decl_tables {
         let words = parse_declension_table(&table)?;
         let infl = parsed_words_to_inflection(&words);
-        let tense = words
-            .first()
-            .unwrap()
-            .parsing
-            .iter()
-            .find_map(|x| {
-                if let ParsingComp::Tense(t) = x {
-                    Some(t)
-                } else {
-                    None
-                }
-            })
-            .with_context(|| {
-                format!(
-                    "cannot get any tense parsing comp in {:?} with words {:?}",
-                    words.first().unwrap(),
-                    words
-                )
-            })?;
+        let tenses = get_words_tenses(&words);
+        let tense = tenses.first().with_context(|| {
+            format!(
+                "cannot get any tense parsing comp in {:?} with words {:?}",
+                words.first().unwrap(),
+                words
+            )
+        })?;
         let dialects = get_words_dialects(&words);
 
         let mut avail_infl = inflections.iter_mut().find_map(|x| {

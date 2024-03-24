@@ -3,9 +3,8 @@ use crate::{
         LexiconEntryDefinition, NounInflectionCases, NounInflectionForm, NounInflectionGenders,
         NounInflectionNumbers, WordInflection,
     },
-    borrow::Cow,
     error::SafeError,
-    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech},
+    grammar::{Case, Gender, Number},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
@@ -18,101 +17,88 @@ use super::{
     table::{get_words_dialects, ParsedWord, ParsingComp},
 };
 
-pub struct ScrappedNoun {
+pub struct ScrappedArticle {
     pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
-    pub declension: Declension,
 }
-pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<ScrappedNoun, SafeError> {
+pub async fn scrap_article(lemma: &str) -> Result<ScrappedArticle, SafeError> {
     let doc = page::scrap(lemma).await?;
 
-    let gender = doc
-        .select(&select(".gender")?)
-        .next()
-        .context("cannot find gender")?
-        .text()
-        .collect::<Cow<str>>()
-        .trim()
-        .to_lowercase();
-    let gender = match gender.as_str() {
-        "f" => Gender::Feminine,
-        "m" => Gender::Masculine,
-        "n" => Gender::Neuter,
-        _ => return Err(format!("cannot match gender '{gender}' for {lemma}").into()),
-    };
-    let mut declension = declension.clone();
-    declension.gender = Some(gender);
+    let selector = select(".NavFrame.grc-decl.grc-adecl")?;
+    let decl_tables = doc.select(&selector);
 
     let mut inflections = vec![];
-    let selector = select(".NavFrame")?;
-    for decl_table in doc.select(&selector) {
-        let words = parse_declension_table(&decl_table)?;
+    for table in decl_tables {
+        let words = parse_declension_table(&table)?;
         let infl = parsed_words_to_inflection(&words);
-
-        let mut genders = NounInflectionGenders::default();
-        match gender {
-            Gender::Feminine => genders.feminine = Some(infl),
-            Gender::Masculine => genders.masculine = Some(infl),
-            Gender::Neuter => genders.neuter = Some(infl),
-        }
         let dialects = get_words_dialects(&words);
         inflections.push(WordInflection {
             dialects,
-            noun: Some(genders),
+            article: Some(infl),
             ..Default::default()
         });
     }
 
-    let noun = match declension.part_of_speech {
-        PartOfSpeech::Noun(x) => x,
-        _ => return Err(format!("expected a noun declension for {lemma}").into()),
-    };
-    let definitions = scrap_noun_defs(&doc, &noun)?;
+    let definitions = scrap_article_defs(&doc)?;
 
-    Ok(ScrappedNoun {
+    Ok(ScrappedArticle {
         inflections,
         definitions,
-        declension,
     })
 }
 
-pub fn scrap_noun_defs(doc: &Html, noun: &Noun) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
-    match noun {
-        Noun::Common => scrap_common_noun_defs(doc),
-        Noun::Proper => scrap_proper_noun_defs(doc),
-    }
-}
-
-fn scrap_common_noun_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
+pub fn scrap_article_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
     let container = doc
-        .select(&select("#Noun")?)
+        .select(&select("#Article")?)
         .next()
-        .with_context(|| "cannot find common noun header".to_string())?;
+        .with_context(|| "cannot find article header".to_string())?;
 
     let definitions = definition::extract_word_defs(&container)?;
 
     Ok(definitions)
 }
 
-fn scrap_proper_noun_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
-    let container = doc
-        .select(&select("#Proper_noun")?)
-        .next()
-        .with_context(|| "cannot find common noun header".to_string())?;
-
-    let definitions = definition::extract_word_defs(&container)?;
-
-    Ok(definitions)
-}
-
-fn parsed_words_to_inflection(words: &[ParsedWord]) -> NounInflectionNumbers {
-    let mut infl = NounInflectionNumbers::default();
+fn parsed_words_to_inflection(words: &[ParsedWord]) -> NounInflectionGenders {
+    let mut infl = NounInflectionGenders::default();
 
     for word in words {
-        fill_numbers(word, &mut infl);
+        fill_genders(word, &mut infl);
     }
 
     infl
+}
+
+fn fill_genders(word: &ParsedWord, genders: &mut NounInflectionGenders) {
+    if word
+        .parsing
+        .contains(&ParsingComp::Gender(Gender::Feminine))
+    {
+        if genders.feminine.is_none() {
+            genders.feminine = Some(Default::default());
+        }
+        let feminine = genders.feminine.as_mut().unwrap();
+
+        fill_numbers(word, feminine);
+    }
+    if word
+        .parsing
+        .contains(&ParsingComp::Gender(Gender::Masculine))
+    {
+        if genders.masculine.is_none() {
+            genders.masculine = Some(Default::default());
+        }
+        let masculine = genders.masculine.as_mut().unwrap();
+
+        fill_numbers(word, masculine);
+    }
+    if word.parsing.contains(&ParsingComp::Gender(Gender::Neuter)) {
+        if genders.neuter.is_none() {
+            genders.neuter = Some(Default::default());
+        }
+        let neuter = genders.neuter.as_mut().unwrap();
+
+        fill_numbers(word, neuter);
+    }
 }
 
 fn fill_numbers(word: &ParsedWord, numbers: &mut NounInflectionNumbers) {
@@ -189,35 +175,5 @@ fn fill_forms(word: &ParsedWord, forms: &mut Vec<NounInflectionForm>) {
             contracted: Some(part.into()),
             ..Default::default()
         })
-    }
-}
-
-pub fn fill_genders(word: &ParsedWord, genders: &mut NounInflectionGenders) {
-    if word
-        .parsing
-        .contains(&ParsingComp::Gender(Gender::Feminine))
-    {
-        if genders.feminine.is_none() {
-            genders.feminine = Some(Default::default());
-        }
-        let feminine = genders.feminine.as_mut().unwrap();
-        fill_numbers(word, feminine);
-    }
-    if word
-        .parsing
-        .contains(&ParsingComp::Gender(Gender::Masculine))
-    {
-        if genders.masculine.is_none() {
-            genders.masculine = Some(Default::default());
-        }
-        let masculine = genders.masculine.as_mut().unwrap();
-        fill_numbers(word, masculine);
-    }
-    if word.parsing.contains(&ParsingComp::Gender(Gender::Neuter)) {
-        if genders.neuter.is_none() {
-            genders.neuter = Some(Default::default());
-        }
-        let neuter = genders.neuter.as_mut().unwrap();
-        fill_numbers(word, neuter);
     }
 }

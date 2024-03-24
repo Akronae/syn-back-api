@@ -1,10 +1,9 @@
-use std::cmp::Ordering;
+
 
 use async_recursion::async_recursion;
 use serde::Deserialize;
-use strsim::normalized_damerau_levenshtein;
+
 use tracing::{debug, info};
-use unidecode::unidecode;
 
 use crate::{
     api::lexicon::lexicon_model::LexiconEntryDefinition,
@@ -12,8 +11,13 @@ use crate::{
     error::SafeError,
     grammar::{Declension, Noun, Number, PartOfSpeech, Person},
     scrappers::wiki::{noun, page},
-    utils::{scrapper::select::select, str::skip_last::SkipLast},
+    utils::{
+        scrapper::select::select,
+        str::{closest::closest, skip_last::SkipLast},
+    },
 };
+
+use super::{article, verb};
 
 #[derive(Debug, Deserialize)]
 struct ListResponseQuerySearch {
@@ -39,33 +43,27 @@ pub async fn search_word_details(
     declension: &Declension,
 ) -> Result<WordDetails, SafeError> {
     let pos = &declension.part_of_speech;
-    let url = build_list_url(word.clone(), pos);
-    debug!("fetching {}", url.as_ref());
-    let response = reqwest::get(url.as_ref()).await?.text().await?;
-    let response: ListResponse = serde_json::from_str::<ListResponse>(&response)?;
+    let urls = build_list_urls(word.clone(), pos);
 
-    let mut lemmas = response.query.search.iter().collect::<Vec<_>>();
+    let mut lemmas = Vec::new();
+    for url in urls {
+        debug!("fetching {}", url.as_ref());
+        let response = reqwest::get(url.as_ref()).await?.text().await?;
+        let response: ListResponse = serde_json::from_str::<ListResponse>(&response)?;
 
-    lemmas.sort_by(|a, b| {
-        let a_dst = normalized_damerau_levenshtein(&a.title, &word);
-        let b_dst = normalized_damerau_levenshtein(&b.title, &word);
-        let a_no_dia_dst = normalized_damerau_levenshtein(&unidecode(&a.title), &unidecode(&word));
-        let b_no_dia_dst = normalized_damerau_levenshtein(&unidecode(&b.title), &unidecode(&word));
-        debug!(
-            "comparing {} ({a_dst} + {a_no_dia_dst}) with {} ({b_dst} + {b_no_dia_dst}) to {word}",
-            a.title, b.title
-        );
-        if a_dst + a_no_dia_dst < b_dst + b_no_dia_dst {
-            Ordering::Greater
-        } else {
-            Ordering::Less
-        }
-    });
+        let lems = response
+            .query
+            .search
+            .iter()
+            .map(|x| x.title.clone())
+            .collect::<Vec<_>>();
+        lemmas.extend(lems);
+    }
 
-    let lemma = lemmas.first();
+    let lemma = closest(word.clone(), &lemmas);
 
     if let Some(lemma) = lemma {
-        let lemma = validate_page(lemma.title.clone(), pos).await?;
+        let lemma = validate_page(lemma, pos).await?;
 
         return Ok(WordDetails { lemma });
     }
@@ -90,9 +88,17 @@ async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, 
         || doc.select(&select(".NavFrame .grc-conj")?).next().is_some();
 
     if !has_infl_table {
+        if matches!(pos, PartOfSpeech::Conjunction) {
+            return Ok(lemma);
+        }
+
         let def;
         if let PartOfSpeech::Noun(noun) = pos {
             def = noun::scrap_noun_defs(&doc, noun)?;
+        } else if &PartOfSpeech::Verb == pos {
+            def = verb::scrap_verb_defs(&doc)?;
+        } else if let PartOfSpeech::Article(_) = pos {
+            def = article::scrap_article_defs(&doc)?;
         } else {
             todo!()
         }
@@ -106,15 +112,21 @@ async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, 
     Ok(lemma)
 }
 
-fn build_list_url(word: Cow<str>, pos: &PartOfSpeech) -> Cow<str> {
-    let category = match pos {
+fn build_list_urls(word: Cow<str>, pos: &PartOfSpeech) -> Vec<Cow<str>> {
+    let categories = match pos {
         PartOfSpeech::Noun(noun) => match noun {
-            Noun::Common => "Ancient_Greek_nouns+Ancient_Greek_noun_forms",
-            Noun::Proper => "Ancient_Greek_proper_nouns+Ancient_Greek_proper_noun_forms",
+            Noun::Common => vec!["Ancient_Greek_nouns", "Ancient_Greek_noun_forms"],
+            Noun::Proper => vec![
+                "Ancient_Greek_proper_nouns",
+                "Ancient_Greek_proper_noun_forms",
+            ],
         },
-        PartOfSpeech::Verb => "Ancient_Greek_verbs+Ancient_Greek_verb_forms",
-        PartOfSpeech::Article(_) => "Ancient_Greek_articles+Ancient_Greek_article_forms",
+        PartOfSpeech::Verb => vec!["Ancient_Greek_verbs", "Ancient_Greek_verb_forms"],
+        PartOfSpeech::Article(_) => vec!["Ancient_Greek_articles", "Ancient_Greek_article_forms"],
+        PartOfSpeech::Conjunction => vec!["Ancient_Greek_conjunctions"],
+        PartOfSpeech::Pronoun(_) => vec!["Ancient_Greek_pronouns", "Ancient_Greek_pronoun_forms"],
         _ => todo!(),
     };
-    format!("https://en.wiktionary.org/w/api.php?format=json&action=query&list=search&srsearch={word}+incategory:{category}").into()
+
+    return categories.iter().map(|x| Cow::<str>::from(format!("https://en.wiktionary.org/w/api.php?format=json&action=query&list=search&srsearch={word}+incategory:{x}"))).collect();
 }

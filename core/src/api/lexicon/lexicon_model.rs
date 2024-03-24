@@ -22,6 +22,7 @@ pub enum LexiconEntryDefinition {
 pub struct WordInflection {
     pub dialects: Vec<Dialect>,
     pub noun: Option<NounInflectionGenders>,
+    pub article: Option<NounInflectionGenders>,
     pub verb: Option<VerbInflectionTenses>,
 }
 

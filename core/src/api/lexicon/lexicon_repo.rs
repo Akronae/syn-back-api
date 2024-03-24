@@ -121,8 +121,16 @@ impl Declension {
     pub fn to_inflection_key(&self) -> Result<String, SafeError> {
         let mut s = Vec::<Cow<str>>::new();
 
-        if let PartOfSpeech::Noun(_) = self.part_of_speech {
-            s.push("noun".into());
+        if matches!(self.part_of_speech, PartOfSpeech::Noun(_))
+            || matches!(self.part_of_speech, PartOfSpeech::Article(_))
+            || matches!(self.part_of_speech, PartOfSpeech::Pronoun(_))
+        {
+            s.push(match self.part_of_speech {
+                PartOfSpeech::Noun(_) => "noun".into(),
+                PartOfSpeech::Article(_) => "article".into(),
+                PartOfSpeech::Pronoun(_) => "pronoun".into(),
+                _ => return Err("part of speech not supported".to_string().into()),
+            });
 
             s.push(match &self.gender {
                 Some(x) => str(x),
@@ -179,10 +187,6 @@ impl Declension {
                 None => return Err("person required".to_string().into()),
             });
 
-            s.push("[]".into());
-            s.push("contracted".into());
-        } else if let PartOfSpeech::Article(_) = self.part_of_speech {
-            s.push("article".into());
             s.push("[]".into());
             s.push("contracted".into());
         } else {

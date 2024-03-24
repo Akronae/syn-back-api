@@ -7,7 +7,7 @@ pub mod parser;
 
 #[allow(dead_code)]
 pub async fn import() -> Result<(), SafeError> {
-    let parsed = parser::parse_chapter(2, Book::Matthew).await?;
+    let parsed = parser::parse_chapter(1, Book::Matthew).await?;
 
     persistence::get_db()
         .await?
