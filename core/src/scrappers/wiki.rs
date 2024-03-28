@@ -34,7 +34,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(2),
+        verse_number: Some(1),
     })
     .await?
     .context("no verse")?;
@@ -121,12 +121,14 @@ pub async fn import() -> Result<(), SafeError> {
                 .iter()
                 .map(|x| x.clone().into())
                 .collect::<Vec<Cow<str>>>();
-            let close = closest(word.text.clone().into(), &inflecteds);
+            let close = closest(word.text.clone().into(), &inflecteds)
+                .first()
+                .map(|x| x.to_string());
 
             if let Some(inflected) = close {
                 if inflected != word.text {
                     debug!("{} changing to {}", word.text, inflected);
-                    word.text = inflected.into();
+                    word.text = inflected.to_string();
                     update_word(&mut verse, word, word_i).await?;
                 } else {
                     debug!("{} already inflected", word.text);

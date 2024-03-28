@@ -58,12 +58,14 @@ pub async fn search_word_details(
         lemmas.extend(lems);
     }
 
-    let lemma = closest(word.clone(), &lemmas);
+    let lemmas = closest(word.clone(), &lemmas);
 
-    if let Some(lemma) = lemma {
+    for lemma in lemmas {
         let lemma = validate_page(lemma, pos).await?;
 
-        return Ok(WordDetails { lemma });
+        if let Some(lemma) = lemma {
+            return Ok(WordDetails { lemma });
+        }
     }
 
     if matches!(pos, PartOfSpeech::Verb)
@@ -80,14 +82,29 @@ pub async fn search_word_details(
 }
 
 #[async_recursion(?Send)]
-async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, SafeError> {
+async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Option<Cow<str>>, SafeError> {
     let doc = page::scrap(lemma.as_ref()).await?;
+
+    if matches!(pos, PartOfSpeech::Noun(Noun::Common)) {
+        if !doc.select(&select("#Noun")?).next().is_some() {
+            return Ok(None);
+        }
+    }
+    if matches!(pos, PartOfSpeech::Noun(Noun::Proper)) {
+        if !doc.select(&select("#Proper_noun")?).next().is_some() {
+            return Ok(None);
+        }
+    }
+
     let has_infl_table = doc.select(&select(".NavFrame.grc-decl")?).next().is_some()
-        || doc.select(&select(".NavFrame .grc-conj")?).next().is_some();
+        || doc
+            .select(&select(".NavFrame .grce-conj")?)
+            .next()
+            .is_some();
 
     if !has_infl_table {
         if matches!(pos, PartOfSpeech::Conjunction) {
-            return Ok(lemma);
+            return Ok(Some(lemma));
         }
 
         let def;
@@ -109,7 +126,7 @@ async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Cow<str>, 
         }
     }
 
-    Ok(lemma)
+    Ok(Some(lemma))
 }
 
 fn build_list_urls(word: Cow<str>, pos: &PartOfSpeech) -> Vec<Cow<str>> {

@@ -4,8 +4,8 @@ use strsim::normalized_damerau_levenshtein;
 
 use crate::{borrow::Cow, utils::str::remove_diacritics::remove_diacritics};
 
-pub fn closest(s: Cow<str>, list: &[Cow<str>]) -> Option<Cow<str>> {
-    let scores = list
+pub fn closest(s: Cow<str>, list: &[Cow<str>]) -> Vec<Cow<str>> {
+    let mut scores = list
         .iter()
         .map(|x| {
             let dst = normalized_damerau_levenshtein(x, s.borrow());
@@ -17,8 +17,7 @@ pub fn closest(s: Cow<str>, list: &[Cow<str>]) -> Option<Cow<str>> {
         })
         .collect::<Vec<_>>();
 
-    return scores
-        .iter()
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal))
-        .map(|x| x.0.clone());
+    scores.sort_by(|b, a| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal));
+
+    return scores.iter().map(|x| x.0.clone()).collect();
 }
