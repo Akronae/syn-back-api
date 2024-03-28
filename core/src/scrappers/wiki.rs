@@ -34,7 +34,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(1),
+        verse_number: Some(2),
     })
     .await?
     .context("no verse")?;
@@ -65,6 +65,9 @@ pub async fn import() -> Result<(), SafeError> {
 
     async fn update_word(verse: &mut Verse, word: &Word, index: usize) -> Result<(), SafeError> {
         let old = verse.words[index].clone();
+        if old.text == word.text {
+            return Ok(());
+        }
         let confirmed = cliclack::confirm(format!(
             "change {} -> {} at word #{index} of verse {}:{}:{}?\n  '{}'",
             old.text,

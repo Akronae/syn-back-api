@@ -34,7 +34,7 @@ pub async fn scrap_pronoun(lemma: &str) -> Result<ScrappedPronoun, SafeError> {
         let dialects = get_words_dialects(&words);
         inflections.push(WordInflection {
             dialects,
-            pronoun: Some(infl),
+            pronoun: Some(Box::from(infl)),
             ..Default::default()
         });
     }

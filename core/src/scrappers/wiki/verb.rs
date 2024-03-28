@@ -91,7 +91,9 @@ fn grab_tense_field<'a>(
 }
 
 fn set_tense_field(infl: &mut WordInflection, tense: &Tense, value: VerbInflectionThemes) {
-    let tenses = infl.verb.get_or_insert(VerbInflectionTenses::default());
+    let tenses = infl
+        .verb
+        .get_or_insert(Box::from(VerbInflectionTenses::default()));
     match tense {
         Tense::Present => tenses.present = Some(value),
         Tense::Imperfect => tenses.imperfect = Some(value),

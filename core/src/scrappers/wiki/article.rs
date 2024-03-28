@@ -34,7 +34,7 @@ pub async fn scrap_article(lemma: &str) -> Result<ScrappedArticle, SafeError> {
         let dialects = get_words_dialects(&words);
         inflections.push(WordInflection {
             dialects,
-            article: Some(infl),
+            article: Some(Box::from(infl)),
             ..Default::default()
         });
     }

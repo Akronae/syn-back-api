@@ -21,10 +21,10 @@ pub enum LexiconEntryDefinition {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct WordInflection {
     pub dialects: Vec<Dialect>,
-    pub noun: Option<NounInflectionGenders>,
-    pub article: Option<NounInflectionGenders>,
-    pub pronoun: Option<NounInflectionGenders>,
-    pub verb: Option<VerbInflectionTenses>,
+    pub noun: Option<Box<NounInflectionGenders>>,
+    pub article: Option<Box<NounInflectionGenders>>,
+    pub pronoun: Option<Box<NounInflectionGenders>>,
+    pub verb: Option<Box<VerbInflectionTenses>>,
 }
 
 #[serde_with::skip_serializing_none]

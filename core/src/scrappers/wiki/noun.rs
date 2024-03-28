@@ -58,7 +58,7 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
         let dialects = get_words_dialects(&words);
         inflections.push(WordInflection {
             dialects,
-            noun: Some(genders),
+            noun: Some(Box::from(genders)),
             ..Default::default()
         });
     }
