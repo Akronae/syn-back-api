@@ -75,7 +75,7 @@ pub async fn scrap_verb(lemma: &str) -> Result<ScrappedVerb, SafeError> {
 fn grab_tense_field<'a>(
     infl: &'a mut WordInflection,
     tense: &Tense,
-) -> Option<&'a mut VerbInflectionThemes> {
+) -> Option<&'a mut Box<VerbInflectionThemes>> {
     let tenses = infl.verb.as_mut()?;
     match tense {
         Tense::Present => tenses.present.as_mut(),
@@ -95,15 +95,15 @@ fn set_tense_field(infl: &mut WordInflection, tense: &Tense, value: VerbInflecti
         .verb
         .get_or_insert(Box::from(VerbInflectionTenses::default()));
     match tense {
-        Tense::Present => tenses.present = Some(value),
-        Tense::Imperfect => tenses.imperfect = Some(value),
-        Tense::Future => tenses.future = Some(value),
-        Tense::Aorist => tenses.aorist = Some(value),
-        Tense::Perfect => tenses.perfect = Some(value),
-        Tense::Pluperfect => tenses.pluperfect = Some(value),
-        Tense::FuturePerfect => tenses.future_perfect = Some(value),
-        Tense::Aorist2nd => tenses.aorist_2nd = Some(value),
-        Tense::Perfect2nd => tenses.perfect_2nd = Some(value),
+        Tense::Present => tenses.present = Some(Box::from(value)),
+        Tense::Imperfect => tenses.imperfect = Some(Box::from(value)),
+        Tense::Future => tenses.future = Some(Box::from(value)),
+        Tense::Aorist => tenses.aorist = Some(Box::from(value)),
+        Tense::Perfect => tenses.perfect = Some(Box::from(value)),
+        Tense::Pluperfect => tenses.pluperfect = Some(Box::from(value)),
+        Tense::FuturePerfect => tenses.future_perfect = Some(Box::from(value)),
+        Tense::Aorist2nd => tenses.aorist_2nd = Some(Box::from(value)),
+        Tense::Perfect2nd => tenses.perfect_2nd = Some(Box::from(value)),
     }
 }
 

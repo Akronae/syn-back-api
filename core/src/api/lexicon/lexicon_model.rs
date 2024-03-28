@@ -30,15 +30,15 @@ pub struct WordInflection {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct VerbInflectionTenses {
-    pub present: Option<VerbInflectionThemes>,
-    pub imperfect: Option<VerbInflectionThemes>,
-    pub future: Option<VerbInflectionThemes>,
-    pub aorist: Option<VerbInflectionThemes>,
-    pub aorist_2nd: Option<VerbInflectionThemes>,
-    pub perfect: Option<VerbInflectionThemes>,
-    pub perfect_2nd: Option<VerbInflectionThemes>,
-    pub future_perfect: Option<VerbInflectionThemes>,
-    pub pluperfect: Option<VerbInflectionThemes>,
+    pub present: Option<Box<VerbInflectionThemes>>,
+    pub imperfect: Option<Box<VerbInflectionThemes>>,
+    pub future: Option<Box<VerbInflectionThemes>>,
+    pub aorist: Option<Box<VerbInflectionThemes>>,
+    pub aorist_2nd: Option<Box<VerbInflectionThemes>>,
+    pub perfect: Option<Box<VerbInflectionThemes>>,
+    pub perfect_2nd: Option<Box<VerbInflectionThemes>>,
+    pub future_perfect: Option<Box<VerbInflectionThemes>>,
+    pub pluperfect: Option<Box<VerbInflectionThemes>>,
 }
 
 #[serde_with::skip_serializing_none]
