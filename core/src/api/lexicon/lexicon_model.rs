@@ -62,9 +62,25 @@ pub struct VerbInflectionMoods {
     pub subjunctive: Option<VerbInflectionVoices>,
     pub optative: Option<VerbInflectionVoices>,
     pub imperative: Option<VerbInflectionVoices>,
-    pub infinitive: Option<Vec<VerbInflectionForm>>,
-    pub participle: Option<NounInflectionGenders>,
+    pub infinitive: Option<VerbInflectionInfinitive>,
+    pub participle: Option<VerbInflectionParticiple>,
     pub pluperfect: Option<VerbInflectionVoices>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionInfinitive {
+    pub active: Option<Vec<VerbInflectionForm>>,
+    pub middle: Option<Vec<VerbInflectionForm>>,
+    pub passive: Option<Vec<VerbInflectionForm>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct VerbInflectionParticiple {
+    pub active: Option<NounInflectionGenders>,
+    pub middle: Option<NounInflectionGenders>,
+    pub passive: Option<NounInflectionGenders>,
 }
 
 #[serde_with::skip_serializing_none]

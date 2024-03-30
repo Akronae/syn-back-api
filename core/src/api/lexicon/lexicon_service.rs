@@ -9,7 +9,7 @@ use crate::{
 use super::{
     lexicon_model::{
         LexiconEntry, LexiconFilter, NounInflectionGenders, VerbInflectionForm,
-        VerbInflectionTenses, WordInflection,
+        VerbInflectionInfinitive, VerbInflectionParticiple, VerbInflectionTenses, WordInflection,
     },
     lexicon_repo::LexiconRepo,
 };
@@ -83,10 +83,16 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
             Mood::Optative => contraction.optative.as_ref().unwrap(),
             Mood::Subjunctive => contraction.subjunctive.as_ref().unwrap(),
             Mood::Infinitive => {
-                return find_inflection_verb_form(contraction.infinitive.as_ref().unwrap())
+                return find_inflection_verb_infinitive(
+                    declension,
+                    contraction.infinitive.as_ref().unwrap(),
+                )
             }
             Mood::Participle => {
-                return find_inflection_noun(declension, contraction.participle.as_ref().unwrap())
+                return find_inflection_verb_participle(
+                    declension,
+                    contraction.participle.as_ref().unwrap(),
+                )
             }
         },
         None => panic!("No mood found for {:?}", declension),
@@ -142,6 +148,42 @@ fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -
         None => return vec![],
     };
     return case.iter().flat_map(|x| x.contracted.clone()).collect();
+}
+
+fn find_inflection_verb_infinitive(
+    declension: &Declension,
+    infinitive: &VerbInflectionInfinitive,
+) -> Vec<String> {
+    match declension.voice {
+        Some(Voice::Active) => {
+            return find_inflection_verb_form(infinitive.active.as_ref().unwrap())
+        }
+        Some(Voice::Middle) => {
+            return find_inflection_verb_form(infinitive.middle.as_ref().unwrap())
+        }
+        Some(Voice::Passive) => {
+            return find_inflection_verb_form(infinitive.passive.as_ref().unwrap())
+        }
+        None => panic!("No voice found for {:?}", declension),
+    }
+}
+
+fn find_inflection_verb_participle(
+    declension: &Declension,
+    infinitive: &VerbInflectionParticiple,
+) -> Vec<String> {
+    match declension.voice {
+        Some(Voice::Active) => {
+            return find_inflection_noun(declension, infinitive.active.as_ref().unwrap())
+        }
+        Some(Voice::Middle) => {
+            return find_inflection_noun(declension, infinitive.middle.as_ref().unwrap())
+        }
+        Some(Voice::Passive) => {
+            return find_inflection_noun(declension, infinitive.passive.as_ref().unwrap())
+        }
+        None => panic!("No voice found for {:?}", declension),
+    }
 }
 
 fn find_inflection_verb_form(form: &[VerbInflectionForm]) -> Vec<String> {

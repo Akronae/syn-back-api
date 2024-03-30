@@ -1,11 +1,12 @@
 use crate::{
     api::lexicon::lexicon_model::{
         LexiconEntryDefinition, VerbInflectionContractions, VerbInflectionForm,
-        VerbInflectionMoods, VerbInflectionNumbers, VerbInflectionPersons, VerbInflectionTenses,
+        VerbInflectionInfinitive, VerbInflectionMoods, VerbInflectionNumbers,
+        VerbInflectionParticiple, VerbInflectionPersons, VerbInflectionTenses,
         VerbInflectionThemes, VerbInflectionVoices, WordInflection,
     },
     error::SafeError,
-    grammar::{Contraction, Mood, Number, Person, Tense, Voice},
+    grammar::{Case, Contraction, Mood, Number, Person, Tense, Voice},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
@@ -196,7 +197,7 @@ fn fill_moods(word: &ParsedWord, moods: &mut VerbInflectionMoods) {
         }
         let infinitive = moods.infinitive.as_mut().unwrap();
 
-        fill_forms(word, infinitive);
+        fill_infinitive(word, infinitive);
     }
     if word.parsing.contains(&ParsingComp::Mood(Mood::Participle)) {
         if moods.participle.is_none() {
@@ -204,7 +205,7 @@ fn fill_moods(word: &ParsedWord, moods: &mut VerbInflectionMoods) {
         }
         let participle = moods.participle.as_mut().unwrap();
 
-        noun::fill_genders(word, participle);
+        fill_participle(word, participle);
     }
 }
 
@@ -304,5 +305,70 @@ fn fill_forms(word: &ParsedWord, forms: &mut Vec<VerbInflectionForm>) {
                 ..Default::default()
             })
         }
+    }
+}
+
+fn fill_infinitive(word: &ParsedWord, infinitive: &mut VerbInflectionInfinitive) {
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Active)) {
+        if infinitive.active.is_none() {
+            infinitive.active = Some(Default::default());
+        }
+        let active = infinitive.active.as_mut().unwrap();
+        fill_forms(word, active);
+    }
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Middle)) {
+        if infinitive.middle.is_none() {
+            infinitive.middle = Some(Default::default());
+        }
+        let middle = infinitive.middle.as_mut().unwrap();
+        fill_forms(word, middle);
+    }
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Passive)) {
+        if infinitive.passive.is_none() {
+            infinitive.passive = Some(Default::default());
+        }
+        let passive = infinitive.passive.as_mut().unwrap();
+        fill_forms(word, passive);
+    }
+}
+
+fn fill_participle(word: &ParsedWord, participle: &mut VerbInflectionParticiple) {
+    // wikipedia does not provide participle numbers and cases
+    let word = &mut word.clone();
+    if !word
+        .parsing
+        .iter()
+        .any(|x| matches!(x, ParsingComp::Number(_)))
+    {
+        word.parsing.push(ParsingComp::Number(Number::Singular))
+    }
+    if !word
+        .parsing
+        .iter()
+        .any(|x| matches!(x, ParsingComp::Case(_)))
+    {
+        word.parsing.push(ParsingComp::Case(Case::Nominative))
+    }
+
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Active)) {
+        if participle.active.is_none() {
+            participle.active = Some(Default::default());
+        }
+        let active = participle.active.as_mut().unwrap();
+        noun::fill_genders(word, active);
+    }
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Middle)) {
+        if participle.middle.is_none() {
+            participle.middle = Some(Default::default());
+        }
+        let middle = participle.middle.as_mut().unwrap();
+        noun::fill_genders(word, middle);
+    }
+    if word.parsing.contains(&ParsingComp::Voice(Voice::Passive)) {
+        if participle.passive.is_none() {
+            participle.passive = Some(Default::default());
+        }
+        let passive = participle.passive.as_mut().unwrap();
+        noun::fill_genders(word, passive);
     }
 }
