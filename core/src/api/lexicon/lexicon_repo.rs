@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use mongodb::{
     bson::{doc, Document},
     options::IndexOptions,
@@ -9,7 +8,7 @@ use nameof::name_of;
 use crate::{
     borrow::Cow,
     error::{MapErrSafe, SafeError},
-    grammar::{Declension, PartOfSpeech},
+    grammar::{Declension, PartOfSpeech, Word},
     persistence::get_db,
     utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
 };
@@ -84,29 +83,31 @@ impl LexiconFilter {
     pub fn to_document(&self) -> Result<Document, SafeError> {
         let mut doc = Document::new();
 
+        let regex_match = |x| doc! {"$regex": format!("^{}$", x), "$options": "i"};
+
         if let Some(lemma) = &self.lemma {
-            doc.insert(
-                name_of!(lemma).camel_case(),
-                doc! {"$regex": lemma, "$options": "i"},
-            );
+            doc.insert(name_of!(lemma).camel_case(), regex_match(lemma));
         }
 
         if let Some(inflection) = &self.inflection {
-            let key = inflection.declension.to_inflection_key()?;
-            let key = format!("inflections.[].{}", key);
-            let mut stages = Vec::<Vec<String>>::new();
-            for part in key.split('.') {
-                if stages.is_empty() {
-                    stages.push(Vec::new());
+            if let Some(key) = inflection.declension.to_inflection_key()? {
+                let key = format!("inflections.[].{}", key);
+                let mut stages = Vec::<Vec<String>>::new();
+                for part in key.split('.') {
+                    if stages.is_empty() {
+                        stages.push(Vec::new());
+                    }
+                    if part != "[]" {
+                        stages.last_mut().unwrap().push(part.to_owned());
+                    } else {
+                        stages.push(Vec::new());
+                    }
                 }
-                if part != "[]" {
-                    stages.last_mut().unwrap().push(part.to_owned());
-                } else {
-                    stages.push(Vec::new());
-                }
-            }
 
-            fill_query(&mut doc, &stages, 0, &inflection.word);
+                fill_query(&mut doc, &stages, 0, &inflection.word);
+            } else {
+                doc.insert("lemma", regex_match(&inflection.word));
+            }
         }
 
         Ok(doc)
@@ -118,7 +119,7 @@ fn str(s: &impl ToString) -> Cow<str> {
 }
 
 impl Declension {
-    pub fn to_inflection_key(&self) -> Result<String, SafeError> {
+    pub fn to_inflection_key(&self) -> Result<Option<String>, SafeError> {
         let mut s = Vec::<Cow<str>>::new();
 
         if matches!(self.part_of_speech, PartOfSpeech::Noun(_))
@@ -190,9 +191,9 @@ impl Declension {
             s.push("[]".into());
             s.push("contracted".into());
         } else {
-            return Err(anyhow!("part of speech not supported {:?}", self.part_of_speech).into());
+            return Ok(None);
         }
 
-        Ok(s.join("."))
+        Ok(Some(s.join(".")))
     }
 }

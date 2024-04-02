@@ -1,3 +1,4 @@
+use thiserror::Error;
 use tracing::*;
 
 use crate::{
@@ -5,7 +6,9 @@ use crate::{
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, PartOfSpeech},
-    scrappers::wiki::{article, conjunction, details::search_word_details, noun, pronoun, verb},
+    scrappers::wiki::{
+        article, conjunction, details::search_word_details, noun, preposition, pronoun, verb,
+    },
 };
 
 pub struct ParseWordResult {
@@ -13,14 +16,24 @@ pub struct ParseWordResult {
     pub declension: Declension,
 }
 
+#[derive(Error, Debug)]
+pub enum ParseWordError {
+    #[error("Word not found in wikitionary: {0}")]
+    NotFound(String),
+    #[error("Error parsing word")]
+    Other(#[from] SafeError),
+}
+
 #[allow(dead_code)]
 pub async fn parse_word(
     greek_word: Cow<str>,
     declension: &Declension,
-) -> Result<ParseWordResult, SafeError> {
+) -> Result<ParseWordResult, ParseWordError> {
     info!("Parsing word {}", greek_word);
 
-    let details = search_word_details(greek_word, declension).await?;
+    let details = search_word_details(greek_word.clone(), declension)
+        .await
+        .map_err(|_| ParseWordError::NotFound(greek_word.clone().into()))?;
     debug!("{:?}", details.clone());
 
     let mut inflections = Vec::new();
@@ -57,6 +70,9 @@ pub async fn parse_word(
     } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction) {
         let conjunction = conjunction::scrap_conjunction(&details.lemma).await?;
         definitions = conjunction.definitions;
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Preposition) {
+        let preposition = preposition::scrap_preposition(&details.lemma).await?;
+        definitions = preposition.definitions;
     } else {
         panic!(
             "Unsupported part of speech: {:?}",

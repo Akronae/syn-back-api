@@ -1,6 +1,6 @@
 use anyhow::Context;
 
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::{
     api::{
@@ -13,6 +13,7 @@ use crate::{
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, PartOfSpeech, Verse, Word},
+    scrappers::{abarim, katabiblon},
     task::sleep_ms,
     utils::str::closest::closest,
 };
@@ -24,6 +25,7 @@ mod details;
 mod noun;
 mod page;
 mod parser;
+mod preposition;
 mod pronoun;
 mod table;
 mod verb;
@@ -34,7 +36,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(2),
+        verse_number: Some(3),
     })
     .await?
     .context("no verse")?;
@@ -113,9 +115,19 @@ pub async fn import() -> Result<(), SafeError> {
         } else {
             debug!("{} not in lexicon, fetching", word.text);
             sleep_ms(1000).await;
-            let res = parser::parse_word(word.text.clone().into(), &word.declension).await?;
-            parsed = res.entry;
-            parsed_decl = Some(res.declension);
+            let res = parser::parse_word(word.text.clone().into(), &word.declension).await;
+            match res {
+                Err(e) => {
+                    warn!("{}", e);
+                    warn!("checking on Katabiblon.");
+                    let res = katabiblon::parser::parse_word(&word.text, &word.declension).await?;
+                    parsed = res;
+                }
+                Ok(res) => {
+                    parsed = res.entry;
+                    parsed_decl = Some(res.declension);
+                }
+            }
         }
 
         if let Some(parsed_inflection) = parsed.inflections.first() {

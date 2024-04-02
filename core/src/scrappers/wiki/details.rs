@@ -103,22 +103,18 @@ async fn validate_page(lemma: Cow<str>, pos: &PartOfSpeech) -> Result<Option<Cow
             .is_some();
 
     if !has_infl_table {
-        if matches!(pos, PartOfSpeech::Conjunction) {
-            return Ok(Some(lemma));
+        match pos {
+            PartOfSpeech::Conjunction | PartOfSpeech::Preposition => return Ok(Some(lemma)),
+            _ => (),
         }
 
-        let def;
-        if let PartOfSpeech::Noun(noun) = pos {
-            def = noun::scrap_noun_defs(&doc, noun)?;
-        } else if &PartOfSpeech::Verb == pos {
-            def = verb::scrap_verb_defs(&doc)?;
-        } else if let PartOfSpeech::Article(_) = pos {
-            def = article::scrap_article_defs(&doc)?;
-        } else if let PartOfSpeech::Pronoun(_) = pos {
-            def = pronoun::scrap_pronoun_defs(&doc)?;
-        } else {
-            panic!("unsupported part of speech: {:?}", pos);
-        }
+        let def = match pos {
+            PartOfSpeech::Noun(noun) => noun::scrap_noun_defs(&doc, noun)?,
+            PartOfSpeech::Verb => verb::scrap_verb_defs(&doc)?,
+            PartOfSpeech::Article(_) => article::scrap_article_defs(&doc)?,
+            PartOfSpeech::Pronoun(_) => pronoun::scrap_pronoun_defs(&doc)?,
+            _ => panic!("unsupported part of speech: {:?}", pos),
+        };
 
         if let Some(LexiconEntryDefinition::FormOf(formof)) = def.first() {
             debug!("found form of {formof}");
@@ -142,7 +138,8 @@ fn build_list_urls(word: Cow<str>, pos: &PartOfSpeech) -> Vec<Cow<str>> {
         PartOfSpeech::Article(_) => vec!["Ancient_Greek_articles", "Ancient_Greek_article_forms"],
         PartOfSpeech::Conjunction => vec!["Ancient_Greek_conjunctions"],
         PartOfSpeech::Pronoun(_) => vec!["Ancient_Greek_pronouns", "Ancient_Greek_pronoun_forms"],
-        _ => todo!(),
+        PartOfSpeech::Preposition => vec!["Ancient_Greek_prepositions"],
+        _ => panic!("unsupported part of speech: {:?}", pos),
     };
 
     return categories.iter().map(|x| Cow::<str>::from(format!("https://en.wiktionary.org/w/api.php?format=json&action=query&list=search&srsearch={word}+incategory:{x}"))).collect();

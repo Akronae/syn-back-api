@@ -8,22 +8,22 @@ use scraper::Html;
 
 use super::{definition, page};
 
-pub struct ScrappedConjunction {
+pub struct ScrappedPreposition {
     pub definitions: Vec<LexiconEntryDefinition>,
 }
-pub async fn scrap_conjunction(lemma: &str) -> Result<ScrappedConjunction, SafeError> {
+pub async fn scrap_preposition(lemma: &str) -> Result<ScrappedPreposition, SafeError> {
     let doc = page::scrap(lemma).await?;
 
-    let definitions = scrap_conjunction_defs(&doc)?;
+    let definitions = scrap_preposition_defs(&doc)?;
 
-    Ok(ScrappedConjunction { definitions })
+    Ok(ScrappedPreposition { definitions })
 }
 
-pub fn scrap_conjunction_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
+pub fn scrap_preposition_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
     let container = doc
-        .select(&select("#Conjunction")?)
+        .select(&select("#Preposition")?)
         .next()
-        .with_context(|| "cannot find conjunction header".to_string())?;
+        .with_context(|| "cannot find preposition header".to_string())?;
 
     let definitions = definition::extract_word_defs(&container)?;
 

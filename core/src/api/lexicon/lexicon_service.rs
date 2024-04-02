@@ -36,8 +36,6 @@ impl WordInflection {
             let verb = self.verb.as_ref().unwrap();
 
             return find_inflection_verb(declension, verb);
-        } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction) {
-            return vec![];
         } else if matches!(declension.part_of_speech, PartOfSpeech::Article(_)) {
             let article = self.article.as_ref().unwrap();
 
@@ -46,6 +44,10 @@ impl WordInflection {
             let pronoun = self.pronoun.as_ref().unwrap();
 
             return find_inflection_noun(declension, pronoun);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction)
+            || !matches!(declension.part_of_speech, PartOfSpeech::Preposition)
+        {
+            return vec![];
         } else {
             panic!(
                 "Unsupported part of speech: {:?}",
