@@ -6,7 +6,7 @@ use crate::grammar::{Declension, Dialect};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LexiconEntry {
     pub lemma: String,
-    pub inflections: Vec<Box<WordInflection>>,
+    pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
 

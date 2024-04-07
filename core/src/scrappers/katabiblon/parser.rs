@@ -18,7 +18,7 @@ pub async fn parse_word(
     debug!("{:?}", details.clone());
 
     let inflections = match details.declension.part_of_speech {
-        PartOfSpeech::Noun(_) => vec![noun::inflect(&details.lemma, &details.declension)?],
+        PartOfSpeech::Noun(_) => vec![*noun::inflect(&details.lemma, &details.declension)?],
         _ => Vec::new(),
     };
 
