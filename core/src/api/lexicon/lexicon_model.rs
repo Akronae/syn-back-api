@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::grammar::{Declension, Dialect};
+use crate::grammar::{Declension, DeclensionType, Dialect};
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -21,6 +21,7 @@ pub enum LexiconEntryDefinition {
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct WordInflection {
     pub dialects: Vec<Dialect>,
+    pub declension_type: Option<DeclensionType>,
     pub noun: Option<Box<NounInflectionGenders>>,
     pub article: Option<Box<NounInflectionGenders>>,
     pub pronoun: Option<Box<NounInflectionGenders>>,

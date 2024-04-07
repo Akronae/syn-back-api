@@ -5,13 +5,13 @@ use crate::{
     },
     borrow::Cow,
     error::SafeError,
-    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech},
+    grammar::{Case, Declension, DeclensionType, Gender, Noun, Number, PartOfSpeech},
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
 
 use anyhow::Context;
-use scraper::Html;
+use scraper::{ElementRef, Html};
 
 use super::{
     definition, page,
@@ -42,6 +42,7 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
     };
     let mut declension = declension.clone();
     declension.gender = Some(gender);
+    declension.decl_type = Some(extract_declension_type(&doc)?);
 
     let mut inflections = vec![];
     let selector = select(".NavFrame")?;
@@ -58,6 +59,7 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
         let dialects = get_words_dialects(&words);
         inflections.push(WordInflection {
             dialects,
+            declension_type: declension.decl_type,
             noun: Some(Box::from(genders)),
             ..Default::default()
         });
@@ -74,6 +76,27 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
         definitions,
         declension,
     })
+}
+
+fn extract_declension_type(doc: &Html) -> Result<DeclensionType, SafeError> {
+    let headword = ElementRef::wrap(
+        doc.select(&select(".headword-line")?)
+            .next()
+            .unwrap()
+            .parent()
+            .unwrap(),
+    )
+    .unwrap()
+    .text()
+    .collect::<String>();
+    let decl_type = match headword.split(';').last().unwrap().to_lowercase().trim() {
+        "first declension" => DeclensionType::First,
+        "second declension" => DeclensionType::Second,
+        "third declension" => DeclensionType::Third,
+        _ => return Err(format!("cannot match declension type").into()),
+    };
+
+    return Ok(decl_type);
 }
 
 pub fn scrap_noun_defs(doc: &Html, noun: &Noun) -> Result<Vec<LexiconEntryDefinition>, SafeError> {

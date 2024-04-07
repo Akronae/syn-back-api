@@ -89,6 +89,7 @@ async fn extract_details(
             s if s.contains("1st decl") => DeclensionType::First,
             s if s.contains("2nd decl") => DeclensionType::Second,
             s if s.contains("3rd decl") => DeclensionType::Third,
+            s if s.contains("indecl.") => DeclensionType::Indeclinable,
             _ => {
                 return Err(
                     format!("could not match declension type for {word}: {decl_type_str}").into(),

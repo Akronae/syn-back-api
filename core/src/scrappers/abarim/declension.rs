@@ -1,7 +1,7 @@
 use crate::{
     grammar::{
-        Article, Case, Declension, Gender, Mood, Noun, Number, PartOfSpeech, Person, Pronoun,
-        Tense, Voice,
+        Article, Case, Declension, DeclensionType, Gender, Mood, Noun, Number, PartOfSpeech,
+        Person, Pronoun, Tense, Voice,
     },
     texts::Book,
 };
@@ -17,7 +17,6 @@ pub fn get_word_fix(
         gender: Some(Gender::Neuter),
         number: Some(Number::Singular),
         case: Some(Case::Nominative),
-        indeclinable: Some(false),
         ..Declension::partial_default(PartOfSpeech::Noun(Noun::Common))
     });
 
@@ -97,7 +96,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
     if comp_1 == "indeclinable" {
         return Declension {
             part_of_speech: pos,
-            indeclinable: Some(true),
+            decl_type: Some(DeclensionType::Indeclinable),
             ..Declension::partial_default(pos)
         };
     }
@@ -293,7 +292,6 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         case,
         voice,
         tense,
-        indeclinable: Some(false),
         ..Declension::partial_default(pos)
     }
 }

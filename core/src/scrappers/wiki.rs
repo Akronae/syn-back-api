@@ -12,7 +12,7 @@ use crate::{
     },
     borrow::Cow,
     error::SafeError,
-    grammar::{Declension, PartOfSpeech, Verse, Word},
+    grammar::{Declension, DeclensionType, PartOfSpeech, Verse, Word},
     scrappers::{
         katabiblon,
         wiki::{details::SearchMode, errors::ParseWordError},
@@ -40,7 +40,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(6),
+        verse_number: Some(7),
     })
     .await?
     .context("no verse")?;
@@ -49,7 +49,7 @@ pub async fn import() -> Result<(), SafeError> {
         word: &str,
         declension: &Declension,
     ) -> Result<Option<LexiconEntry>, SafeError> {
-        if declension.indeclinable.unwrap_or(false)
+        if declension.decl_type == Some(DeclensionType::Indeclinable)
             || declension.part_of_speech == PartOfSpeech::Conjunction
         {
             return LexiconRepo::find_one(LexiconFilter {

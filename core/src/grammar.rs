@@ -198,6 +198,7 @@ pub enum DeclensionType {
     First,
     Second,
     Third,
+    Indeclinable,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -214,7 +215,6 @@ pub struct Declension {
     pub tense: Option<Tense>,
     pub theme: Option<Theme>,
     pub contraction: Option<Contraction>,
-    pub indeclinable: Option<bool>,
     pub decl_type: Option<DeclensionType>,
 }
 
@@ -231,7 +231,6 @@ impl Declension {
             tense: Default::default(),
             theme: Default::default(),
             contraction: Default::default(),
-            indeclinable: Default::default(),
             decl_type: Default::default(),
         }
     }
