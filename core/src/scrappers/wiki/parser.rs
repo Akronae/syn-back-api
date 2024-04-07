@@ -7,33 +7,28 @@ use crate::{
     error::SafeError,
     grammar::{Declension, PartOfSpeech},
     scrappers::wiki::{
-        article, conjunction, details::search_word_details, noun, preposition, pronoun, verb,
+        article, conjunction,
+        details::{search_word_details, SearchMode},
+        noun, preposition, pronoun, verb,
     },
 };
+
+use super::errors::ParseWordError;
 
 pub struct ParseWordResult {
     pub entry: LexiconEntry,
     pub declension: Declension,
 }
 
-#[derive(Error, Debug)]
-pub enum ParseWordError {
-    #[error("Word not found in wikitionary: {0}")]
-    NotFound(String),
-    #[error("Error parsing word")]
-    Other(#[from] SafeError),
-}
-
 #[allow(dead_code)]
 pub async fn parse_word(
     greek_word: Cow<str>,
     declension: &Declension,
+    mode: &SearchMode,
 ) -> Result<ParseWordResult, ParseWordError> {
     info!("Parsing word {}", greek_word);
 
-    let details = search_word_details(greek_word.clone(), declension)
-        .await
-        .map_err(|_| ParseWordError::NotFound(greek_word.clone().into()))?;
+    let details = search_word_details(greek_word.clone(), declension, mode).await?;
     debug!("{:?}", details.clone());
 
     let mut inflections = Vec::new();

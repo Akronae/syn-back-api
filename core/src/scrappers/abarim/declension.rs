@@ -21,11 +21,24 @@ pub fn get_word_fix(
         ..Declension::partial_default(PartOfSpeech::Noun(Noun::Common))
     });
 
+    let routh = Some(Declension {
+        gender: Some(Gender::Feminine),
+        number: Some(Number::Singular),
+        ..Declension::partial_default(PartOfSpeech::Noun(Noun::Proper))
+    });
+
     if book == Book::Matthew && chapter == 0 && verse == 15 && word == 13 {
         return onar;
     }
     if greek == "οναρ" {
         return onar;
+    }
+
+    if book == Book::Matthew && chapter == 1 && verse == 5 && word == 15 {
+        return Some(Declension {
+            case: Some(Case::Genitive),
+            ..routh.unwrap()
+        });
     }
 
     None

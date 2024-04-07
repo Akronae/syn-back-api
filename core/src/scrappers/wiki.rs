@@ -13,7 +13,10 @@ use crate::{
     borrow::Cow,
     error::SafeError,
     grammar::{Declension, PartOfSpeech, Verse, Word},
-    scrappers::{abarim, katabiblon},
+    scrappers::{
+        abarim, katabiblon,
+        wiki::{details::SearchMode, errors::ParseWordError},
+    },
     task::sleep_ms,
     utils::str::closest::closest,
 };
@@ -22,6 +25,7 @@ mod article;
 mod conjunction;
 mod definition;
 mod details;
+mod errors;
 mod noun;
 mod page;
 mod parser;
@@ -36,7 +40,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(3),
+        verse_number: Some(6),
     })
     .await?
     .context("no verse")?;
@@ -115,14 +119,25 @@ pub async fn import() -> Result<(), SafeError> {
         } else {
             debug!("{} not in lexicon, fetching", word.text);
             sleep_ms(1000).await;
-            let res = parser::parse_word(word.text.clone().into(), &word.declension).await;
+            let res = parser::parse_word(
+                word.text.clone().into(),
+                &word.declension,
+                &SearchMode::Query,
+            )
+            .await;
             match res {
-                Err(e) => {
-                    warn!("{}", e);
-                    warn!("checking on Katabiblon.");
-                    let res = katabiblon::parser::parse_word(&word.text, &word.declension).await?;
-                    parsed = res;
-                }
+                Err(e) => match e {
+                    ParseWordError::NotFound(_) => {
+                        warn!("{}", e);
+                        warn!("checking on Katabiblon.");
+                        let res =
+                            katabiblon::parser::parse_word(&word.text, &word.declension).await?;
+                        parsed = res;
+                    }
+                    _ => {
+                        return Err(e.into());
+                    }
+                },
                 Ok(res) => {
                     parsed = res.entry;
                     parsed_decl = Some(res.declension);

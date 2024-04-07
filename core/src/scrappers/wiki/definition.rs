@@ -28,14 +28,6 @@ pub fn extract_word_defs(
             .select(&select(".form-of-definition")?)
             .next()
         {
-            // let text = formof
-            //     .select(&select(".form-of-definition-link .Polyt")?)
-            //     .next()
-            //     .with_context(|| "cannot find form-of-definition-link".to_string())?
-            //     .text()
-            //     .collect::<Cow<str>>()
-            //     .trim()
-            //     .to_string();
             let text = formof
                 .select(&select(".form-of-definition-link .Polyt a")?)
                 .next()
