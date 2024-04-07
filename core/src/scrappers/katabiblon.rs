@@ -1,4 +1,5 @@
 pub mod details;
+mod noun;
 mod page;
 pub mod parser;
 

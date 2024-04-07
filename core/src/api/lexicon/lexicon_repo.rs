@@ -8,7 +8,7 @@ use nameof::name_of;
 use crate::{
     borrow::Cow,
     error::{MapErrSafe, SafeError},
-    grammar::{Declension, PartOfSpeech, Word},
+    grammar::{Declension, PartOfSpeech},
     persistence::get_db,
     utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
 };

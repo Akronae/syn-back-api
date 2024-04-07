@@ -14,7 +14,7 @@ use crate::{
     error::SafeError,
     grammar::{Declension, PartOfSpeech, Verse, Word},
     scrappers::{
-        abarim, katabiblon,
+        katabiblon,
         wiki::{details::SearchMode, errors::ParseWordError},
     },
     task::sleep_ms,

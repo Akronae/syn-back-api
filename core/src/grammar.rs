@@ -200,7 +200,7 @@ pub enum DeclensionType {
     Third,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 #[serde_with::skip_serializing_none]
 pub struct Declension {
@@ -215,6 +215,7 @@ pub struct Declension {
     pub theme: Option<Theme>,
     pub contraction: Option<Contraction>,
     pub indeclinable: Option<bool>,
+    pub decl_type: Option<DeclensionType>,
 }
 
 impl Declension {
@@ -231,6 +232,7 @@ impl Declension {
             theme: Default::default(),
             contraction: Default::default(),
             indeclinable: Default::default(),
+            decl_type: Default::default(),
         }
     }
 }

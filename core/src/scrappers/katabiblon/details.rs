@@ -2,7 +2,6 @@ use std::{borrow::Cow, collections::HashMap};
 
 use anyhow::Context;
 use serde::Serialize;
-use tracing_subscriber::fmt::format;
 
 use crate::{
     error::SafeError,
@@ -26,7 +25,7 @@ pub struct WordDetails {
     pub lemma: String,
     pub translation: String,
     pub description: String,
-    pub declension_type: DeclensionType,
+    pub declension: Declension,
 }
 
 pub async fn search_word_details(
@@ -49,13 +48,19 @@ pub async fn search_word_details(
 
     extract_details(
         greek_word,
+        declension.to_owned(),
         matching_opt.opt_index,
         &matching_opt.inflection_lemma,
     )
     .await
 }
 
-async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetails, SafeError> {
+async fn extract_details(
+    word: &str,
+    mut declension: Declension,
+    opt: i32,
+    lemma: &str,
+) -> Result<WordDetails, SafeError> {
     let page = page::scrap(word, &Some(opt)).await?;
 
     let translation = page
@@ -79,22 +84,26 @@ async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetail
         .text()
         .collect::<String>();
 
-    let declension_type = match decl_type_str.to_lowercase() {
-        s if s.contains("1st decl") => DeclensionType::First,
-        s if s.contains("2nd decl") => DeclensionType::Second,
-        s if s.contains("3rd decl") => DeclensionType::Third,
-        _ => {
-            return Err(
-                format!("could not match declension type for {word}: {decl_type_str}").into(),
-            )
-        }
-    };
+    if matches!(declension.part_of_speech, PartOfSpeech::Noun(_)) {
+        let declension_type = match decl_type_str.to_lowercase() {
+            s if s.contains("1st decl") => DeclensionType::First,
+            s if s.contains("2nd decl") => DeclensionType::Second,
+            s if s.contains("3rd decl") => DeclensionType::Third,
+            _ => {
+                return Err(
+                    format!("could not match declension type for {word}: {decl_type_str}").into(),
+                )
+            }
+        };
+
+        declension.decl_type = Some(declension_type);
+    }
 
     Ok(WordDetails {
         lemma: lemma.to_string(),
         translation: translation.decode_html(),
         description: desc.decode_html(),
-        declension_type,
+        declension,
     })
 }
 
@@ -159,7 +168,7 @@ async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
     let table = page
         .select(&select("#content table")?)
         .next()
-        .with_context(|| format!("could not get first table"))?;
+        .with_context(|| "could not get first table".to_string())?;
 
     let mut parsing_options = Vec::<ParsingOption>::new();
 

@@ -13,7 +13,7 @@ use crate::{
     utils::{
         scrapper::select::select,
         str::{
-            closest::{closest, closest_with_score, similarity_score},
+            closest::{closest_with_score, similarity_score},
             skip_last::SkipLast,
         },
     },
@@ -76,15 +76,11 @@ async fn validate_page(
 ) -> Result<Option<Cow<str>>, SafeError> {
     let doc = page::scrap(lemma.as_ref()).await?;
 
-    if matches!(pos, PartOfSpeech::Noun(Noun::Common)) {
-        if !doc.select(&select("#Noun")?).next().is_some() {
-            return Ok(None);
-        }
+    if matches!(pos, PartOfSpeech::Noun(Noun::Common)) && doc.select(&select("#Noun")?).next().is_none() {
+        return Ok(None);
     }
-    if matches!(pos, PartOfSpeech::Noun(Noun::Proper)) {
-        if !doc.select(&select("#Proper_noun")?).next().is_some() {
-            return Ok(None);
-        }
+    if matches!(pos, PartOfSpeech::Noun(Noun::Proper)) && doc.select(&select("#Proper_noun")?).next().is_none() {
+        return Ok(None);
     }
 
     let def = match pos {
@@ -204,8 +200,8 @@ async fn opensearch(word: Cow<str>) -> Result<Vec<Cow<str>>, SafeError> {
 
     let elem_1 = response.0.get(1).context("no elem at index 1")?;
     if let VecOrSingle::Vec(vec) = elem_1 {
-        return Ok(vec.clone());
+        Ok(vec.clone())
     } else {
-        return Err("expected to have a vector at index 1".into());
+        Err("expected to have a vector at index 1".into())
     }
 }

@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, cmp::Ordering};
+use std::{cmp::Ordering};
 
 use strsim::normalized_damerau_levenshtein;
 
@@ -13,7 +13,7 @@ pub fn similarity_score(s1: Cow<str>, s2: Cow<str>) -> f64 {
     let dst = normalized_damerau_levenshtein(&s1, &s2);
     let no_dia_dst =
         normalized_damerau_levenshtein(&remove_diacritics(&s1), &remove_diacritics(&s2));
-    return dst + no_dia_dst;
+    dst + no_dia_dst
 }
 
 pub fn closest_with_score(s: Cow<str>, list: &[Cow<str>]) -> Vec<Scored> {

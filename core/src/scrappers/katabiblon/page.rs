@@ -1,8 +1,8 @@
-use scraper::{selectable::Selectable, ElementRef, Html};
+use scraper::{Html};
 use tracing::debug;
 use url::Url;
 
-use crate::{error::SafeError, utils::scrapper::select::select};
+use crate::{error::SafeError};
 
 pub async fn scrap(word: &str, opt: &Option<i32>) -> Result<Html, SafeError> {
     let url = build_scrap_url(word, opt)?;

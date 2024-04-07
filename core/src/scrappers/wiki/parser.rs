@@ -1,10 +1,9 @@
-use thiserror::Error;
+
 use tracing::*;
 
 use crate::{
     api::lexicon::lexicon_model::LexiconEntry,
     borrow::Cow,
-    error::SafeError,
     grammar::{Declension, PartOfSpeech},
     scrappers::wiki::{
         article, conjunction,
