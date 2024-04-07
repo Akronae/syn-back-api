@@ -8,10 +8,12 @@ pub async fn scrap(lemma: &str) -> Result<Html, SafeError> {
     debug!("fetching {url}");
     let res = reqwest::get(&url).await?.text().await?;
     let mut doc = Html::parse_document(&res);
+    let doc_clone = doc.clone();
     let s = select("#Ancient_Greek")?;
-    let a = doc.clone();
-    let header = a.select(&s).next().unwrap().parent().unwrap();
+    let header = doc_clone.select(&s).next().unwrap().parent().unwrap();
+
     let mut passed_anc_greek_section = false;
+
     for node in header.next_siblings() {
         if !node.value().is_element() {
             continue;

@@ -2,14 +2,15 @@ use std::{borrow::Cow, collections::HashMap};
 
 use anyhow::Context;
 use serde::Serialize;
-use tracing::debug;
-use url::Url;
+use tracing_subscriber::fmt::format;
 
 use crate::{
     error::SafeError,
-    grammar::{Case, Declension, Gender, Noun, Number, PartOfSpeech},
-    utils::str::decode_html::DecodeHtml,
+    grammar::{Case, Declension, DeclensionType, Gender, Noun, Number, PartOfSpeech},
+    utils::{scrapper::select::select, str::decode_html::DecodeHtml},
 };
+
+use super::page;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 struct ParsingOption {
@@ -25,6 +26,7 @@ pub struct WordDetails {
     pub lemma: String,
     pub translation: String,
     pub description: String,
+    pub declension_type: DeclensionType,
 }
 
 pub async fn search_word_details(
@@ -54,53 +56,45 @@ pub async fn search_word_details(
 }
 
 async fn extract_details(word: &str, opt: i32, lemma: &str) -> Result<WordDetails, SafeError> {
-    let url = &get_search_url(word, &Some(opt))?;
-    debug!("Fetching {}", url);
-    let res = reqwest::get(url).await?.text().await?;
+    let page = page::scrap(word, &Some(opt)).await?;
 
-    let dom = tl::parse(res.as_str(), tl::ParserOptions::default())?;
-    let parser = dom.parser();
-
-    let title_str = dom
-        .query_selector("h2[lang='el']")
-        .unwrap()
+    let translation = page
+        .select(&select("input[name='user-definition-basic']")?)
         .next()
         .unwrap()
-        .get(parser)
-        .unwrap()
-        .inner_text(parser);
-    let _infos = title_str.trim().split(',').collect::<Vec<&str>>();
-
-    let translation_bytes = dom
-        .query_selector("input[name='user-definition-basic']")
-        .unwrap()
-        .next()
-        .unwrap()
-        .get(parser)
-        .unwrap()
-        .as_tag()
-        .unwrap()
-        .attributes()
-        .get("value")
-        .unwrap()
+        .attr("value")
         .unwrap();
-    let translation = std::str::from_utf8(translation_bytes.as_bytes())?;
 
-    let desc = dom
-        .query_selector("textarea[name='user-definition-long']")
-        .unwrap()
+    let desc = page
+        .select(&select("textarea[name='user-definition-long']")?)
         .next()
         .unwrap()
-        .get(parser)
+        .text()
+        .collect::<String>();
+
+    let decl_type_str = page
+        .select(&select("#content p[style='margin-top:0'")?)
+        .next()
         .unwrap()
-        .as_tag()
-        .unwrap()
-        .inner_text(parser);
+        .text()
+        .collect::<String>();
+
+    let declension_type = match decl_type_str.to_lowercase() {
+        s if s.contains("1st decl") => DeclensionType::First,
+        s if s.contains("2nd decl") => DeclensionType::Second,
+        s if s.contains("3rd decl") => DeclensionType::Third,
+        _ => {
+            return Err(
+                format!("could not match declension type for {word}: {decl_type_str}").into(),
+            )
+        }
+    };
 
     Ok(WordDetails {
         lemma: lemma.to_string(),
-        translation: translation.to_string().decode_html(),
-        description: desc.to_string().decode_html(),
+        translation: translation.decode_html(),
+        description: desc.decode_html(),
+        declension_type,
     })
 }
 
@@ -160,49 +154,19 @@ fn compute_option_matching(option: &ParsingOption, declension: &Declension) -> i
 }
 
 async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
-    let url = &get_search_url(word, &None)?;
-    debug!("Fetching {}", url);
-    let res = reqwest::get(url).await?.text().await?;
+    let page = page::scrap(word, &None).await?;
 
-    let dom = tl::parse(res.as_str(), tl::ParserOptions::default())?;
-    let parser = dom.parser();
-
-    let table_html = dom
-        .query_selector("#content")
-        .unwrap()
+    let table = page
+        .select(&select("#content table")?)
         .next()
-        .unwrap()
-        .get(parser)
-        .unwrap()
-        .as_tag()
-        .unwrap()
-        .query_selector(parser, "table")
-        .context("Could not find table")?
-        .next()
-        .with_context(|| format!("could not get first table in {}", res))?
-        .get(parser)
-        .unwrap()
-        .inner_html(parser);
-
-    let table_dom = tl::parse(&table_html, tl::ParserOptions::default())?;
-    let table_parser = table_dom.parser();
+        .with_context(|| format!("could not get first table"))?;
 
     let mut parsing_options = Vec::<ParsingOption>::new();
 
-    for (i, tr) in table_dom.query_selector("tr").unwrap().enumerate() {
-        let tr_html = tr
-            .get(table_parser)
-            .unwrap()
-            .as_tag()
-            .unwrap()
-            .inner_html(table_parser);
-        let tr_dom = tl::parse(&tr_html, tl::ParserOptions::default())?;
-        let tr_parser = tr_dom.parser();
-
-        let tds_txt = tr_dom
-            .query_selector("td")
-            .unwrap()
-            .map(|x| x.get(tr_parser).unwrap().inner_text(tr_parser))
+    for (i, tr) in table.select(&select("tr")?).enumerate() {
+        let tds_txt = tr
+            .select(&select("td")?)
+            .map(|x| x.text().collect())
             .collect::<Vec<Cow<str>>>();
 
         if tds_txt.is_empty() {
@@ -219,15 +183,4 @@ async fn extract_options(word: &str) -> Result<Vec<ParsingOption>, SafeError> {
     }
 
     Ok(parsing_options)
-}
-
-fn get_search_url(word: &str, opt: &Option<i32>) -> Result<String, SafeError> {
-    let base_url = "https://lexicon.katabiblon.com/index.php";
-
-    let mut url = Url::parse(base_url)?;
-    url.query_pairs_mut()
-        .append_pair("search", word)
-        .append_pair("opt", &opt.unwrap_or(1).to_string());
-
-    Ok(url.to_string())
 }
