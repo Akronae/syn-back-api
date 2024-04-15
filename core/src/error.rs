@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Stderr};
 
 use anyhow::anyhow;
 use scraper::error::SelectorErrorKind;
@@ -52,6 +52,12 @@ impl IntoErr<SafeError> for SelectorErrorKind<'_> {
 impl IntoErr<SafeError> for io::Error {
     fn into_err(self) -> SafeError {
         Box::new(Error(anyhow!(self)))
+    }
+}
+
+impl IntoErr<SafeError> for Stderr {
+    fn into_err(self) -> SafeError {
+        Box::new(Error(anyhow!(format!("{:?}", self))))
     }
 }
 

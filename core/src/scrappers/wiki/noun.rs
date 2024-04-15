@@ -89,11 +89,15 @@ fn extract_declension_type(doc: &Html) -> Result<DeclensionType, SafeError> {
     .unwrap()
     .text()
     .collect::<String>();
-    let decl_type = match headword.split(';').last().unwrap().to_lowercase().trim() {
-        "first declension" => DeclensionType::First,
-        "second declension" => DeclensionType::Second,
-        "third declension" => DeclensionType::Third,
-        _ => return Err(format!("cannot match declension type").into()),
+    let decl_str = headword.split(';').last().unwrap().to_lowercase();
+    let decl_str = decl_str.trim();
+
+    let decl_type = match decl_str {
+        x if x.contains("first declension") => DeclensionType::First,
+        x if x.contains("second declension") => DeclensionType::Second,
+        x if x.contains("third declension") => DeclensionType::Third,
+        x if x.contains("indeclinable") => DeclensionType::Indeclinable,
+        _ => return Err(format!("cannot match declension type: '{decl_str}'").into()),
     };
 
     return Ok(decl_type);

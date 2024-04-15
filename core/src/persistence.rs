@@ -2,15 +2,13 @@ use anyhow::Context;
 use mongodb::{options::ClientOptions, Client, Database};
 use once_cell::sync::OnceCell;
 
-use crate::{
-    config::{Config, EnvVar},
-    error::SafeError,
-};
+use crate::{config::EnvVar, error::SafeError};
 
 static DB: OnceCell<Database> = OnceCell::new();
+
 pub async fn get_db() -> Result<Database, SafeError> {
     if DB.get().is_none() {
-        let mut client_options = ClientOptions::parse(Config.get::<String>(EnvVar::MongoUri)?)
+        let mut client_options = ClientOptions::parse(EnvVar::MongoUri.get::<String>()?)
             .await
             .with_context(|| "Failed to parse MongoDB URI")?;
 

@@ -7,6 +7,8 @@ mod error;
 mod grammar;
 mod log;
 mod persistence;
+mod redis;
+mod request;
 mod scrappers;
 mod task;
 mod texts;

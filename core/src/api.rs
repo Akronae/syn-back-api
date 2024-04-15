@@ -15,8 +15,8 @@ use crate::{
         lexicon::{lexicon_controller, lexicon_repo},
         verse::{verse_controller, verse_repo},
     },
-    config::{Config, EnvVar},
-    error::{MapErrIo, MapErrSafe, SafeError},
+    config::EnvVar,
+    error::{MapErrSafe, SafeError},
 };
 
 pub fn cors() -> Cors {
@@ -27,7 +27,7 @@ pub fn cors() -> Cors {
 }
 
 pub async fn init() -> Result<(), SafeError> {
-    let port = Config.get(EnvVar::Port).map_err_io()?;
+    let port = EnvVar::Port.get()?;
 
     tracing::info!(
         address = format!("http://localhost:{}", port),

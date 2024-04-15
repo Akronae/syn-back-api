@@ -1,13 +1,19 @@
-use scraper::{Html};
+use scraper::Html;
 use tracing::debug;
 use url::Url;
 
-use crate::{error::SafeError};
+use crate::{error::SafeError, request::request};
 
 pub async fn scrap(word: &str, opt: &Option<i32>) -> Result<Html, SafeError> {
     let url = build_scrap_url(word, opt)?;
     debug!("fetching {url}");
-    let res = reqwest::get(&url).await?.text().await?;
+    let res = request()
+        .with_method(reqwest::Method::GET)
+        .with_url(url)
+        .with_cache(true)
+        .text()
+        .await?;
+
     let doc = Html::parse_document(&res);
     Ok(doc)
 }

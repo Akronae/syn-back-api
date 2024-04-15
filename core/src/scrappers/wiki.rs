@@ -118,7 +118,6 @@ pub async fn import() -> Result<(), SafeError> {
             parsed = already;
         } else {
             debug!("{} not in lexicon, fetching", word.text);
-            sleep_ms(1000).await;
             let res = parser::parse_word(
                 word.text.clone().into(),
                 &word.declension,

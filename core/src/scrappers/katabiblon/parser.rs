@@ -3,7 +3,7 @@ use tracing::*;
 use crate::{
     api::lexicon::lexicon_model::{LexiconEntry, LexiconEntryDefinition},
     error::SafeError,
-    grammar::{Declension, PartOfSpeech},
+    grammar::{Declension, DeclensionType, PartOfSpeech},
     scrappers::katabiblon::{details::search_word_details, noun},
 };
 
@@ -18,7 +18,10 @@ pub async fn parse_word(
     debug!("{:?}", details.clone());
 
     let inflections = match details.declension.part_of_speech {
-        PartOfSpeech::Noun(_) => vec![*noun::inflect(&details.lemma, &details.declension)?],
+        PartOfSpeech::Noun(_) => match details.declension.decl_type {
+            Some(DeclensionType::Indeclinable) | None => Vec::new(),
+            _ => vec![*noun::inflect(&details.lemma, &details.declension)?],
+        },
         _ => Vec::new(),
     };
 
