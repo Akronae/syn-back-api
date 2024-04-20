@@ -17,7 +17,6 @@ use crate::{
         katabiblon,
         wiki::{details::SearchMode, errors::ParseWordError},
     },
-    task::sleep_ms,
     utils::str::closest::closest,
 };
 
@@ -29,6 +28,7 @@ mod errors;
 mod noun;
 mod page;
 mod parser;
+mod participle;
 mod preposition;
 mod pronoun;
 mod table;
@@ -40,7 +40,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(7),
+        verse_number: Some(16),
     })
     .await?
     .context("no verse")?;
@@ -112,7 +112,7 @@ pub async fn import() -> Result<(), SafeError> {
         debug!("processing #{word_i} word {}", word.text);
 
         let parsed;
-        let mut parsed_decl = None;
+        let mut declension = word.declension.clone();
         if let Some(already) = find_in_lexicon(&word.text, &word.declension).await? {
             debug!("{} already in lexicon", word.text);
             parsed = already;
@@ -139,13 +139,19 @@ pub async fn import() -> Result<(), SafeError> {
                 },
                 Ok(res) => {
                     parsed = res.entry;
-                    parsed_decl = Some(res.declension);
+                    declension = res.declension;
                 }
             }
         }
 
-        if let Some(parsed_inflection) = parsed.inflections.first() {
-            let inflecteds = parsed_inflection.find_inflection(&word.declension);
+        let is_indeclinable = matches!(
+            word.declension.decl_type,
+            Some(DeclensionType::Indeclinable)
+        );
+
+        if parsed.inflections.first().is_some() && !is_indeclinable {
+            let parsed_inflection = parsed.inflections.first().unwrap();
+            let inflecteds = parsed_inflection.find_inflection(&declension);
             let inflecteds = inflecteds
                 .iter()
                 .map(|x| x.clone().into())
@@ -177,8 +183,8 @@ pub async fn import() -> Result<(), SafeError> {
             );
         }
 
-        if let Some(parsed_decl) = parsed_decl {
-            word.declension = parsed_decl;
+        if word.declension != declension {
+            word.declension = declension.clone();
             update_word(&mut verse, word, word_i).await?;
         }
 

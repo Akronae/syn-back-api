@@ -1,6 +1,6 @@
 use crate::{
     api::lexicon::lexicon_model::{
-        NounInflectionCases, NounInflectionForm, NounInflectionGenders, NounInflectionNumbers,
+        InflectionForm, NounInflectionCases, NounInflectionGenders, NounInflectionNumbers,
         WordInflection,
     },
     error::SafeError,
@@ -95,10 +95,10 @@ fn inflect_1st_mas(lemma: &str) -> Result<Box<NounInflectionNumbers>, SafeError>
     }
 }
 
-fn conjugate_inflection_forms(root: &str, forms: &[NounInflectionForm]) -> Vec<NounInflectionForm> {
+fn conjugate_inflection_forms(root: &str, forms: &[InflectionForm]) -> Vec<InflectionForm> {
     forms
         .iter()
-        .map(|ending| NounInflectionForm {
+        .map(|ending| InflectionForm {
             contracted: Some(format!("{}{}", root, ending.contracted.as_ref().unwrap())),
             uncontracted: Some(vec![
                 root.to_string(),
@@ -152,23 +152,23 @@ fn conjugate(root: &str, endings: &NounInflectionNumbers) -> Box<NounInflectionN
 
 fn get_1st_eta_du_endings() -> Box<NounInflectionCases> {
     Box::from(NounInflectionCases {
-        nominative: Some(vec![NounInflectionForm {
+        nominative: Some(vec![InflectionForm {
             contracted: Some("ᾱ".to_string()),
             ..Default::default()
         }]),
-        vocative: Some(vec![NounInflectionForm {
+        vocative: Some(vec![InflectionForm {
             contracted: Some("ᾱ".to_string()),
             ..Default::default()
         }]),
-        accusative: Some(vec![NounInflectionForm {
+        accusative: Some(vec![InflectionForm {
             contracted: Some("ᾱ".to_string()),
             ..Default::default()
         }]),
-        genitive: Some(vec![NounInflectionForm {
+        genitive: Some(vec![InflectionForm {
             contracted: Some("αιν".to_string()),
             ..Default::default()
         }]),
-        dative: Some(vec![NounInflectionForm {
+        dative: Some(vec![InflectionForm {
             contracted: Some("αιν".to_string()),
             ..Default::default()
         }]),
@@ -177,23 +177,23 @@ fn get_1st_eta_du_endings() -> Box<NounInflectionCases> {
 
 fn get_1st_eta_pl_endings() -> Box<NounInflectionCases> {
     Box::from(NounInflectionCases {
-        nominative: Some(vec![NounInflectionForm {
+        nominative: Some(vec![InflectionForm {
             contracted: Some("αι".to_string()),
             ..Default::default()
         }]),
-        vocative: Some(vec![NounInflectionForm {
+        vocative: Some(vec![InflectionForm {
             contracted: Some("αι".to_string()),
             ..Default::default()
         }]),
-        accusative: Some(vec![NounInflectionForm {
+        accusative: Some(vec![InflectionForm {
             contracted: Some("ᾱς".to_string()),
             ..Default::default()
         }]),
-        genitive: Some(vec![NounInflectionForm {
+        genitive: Some(vec![InflectionForm {
             contracted: Some("ων".to_string()),
             ..Default::default()
         }]),
-        dative: Some(vec![NounInflectionForm {
+        dative: Some(vec![InflectionForm {
             contracted: Some("αις".to_string()),
             ..Default::default()
         }]),
@@ -203,23 +203,23 @@ fn get_1st_eta_pl_endings() -> Box<NounInflectionCases> {
 fn get_1st_fem_h_endings() -> Box<NounInflectionNumbers> {
     Box::from(NounInflectionNumbers {
         singular: Some(NounInflectionCases {
-            nominative: Some(vec![NounInflectionForm {
+            nominative: Some(vec![InflectionForm {
                 contracted: Some("η".to_string()),
                 ..Default::default()
             }]),
-            vocative: Some(vec![NounInflectionForm {
+            vocative: Some(vec![InflectionForm {
                 contracted: Some("ης".to_string()),
                 ..Default::default()
             }]),
-            accusative: Some(vec![NounInflectionForm {
+            accusative: Some(vec![InflectionForm {
                 contracted: Some("ην".to_string()),
                 ..Default::default()
             }]),
-            genitive: Some(vec![NounInflectionForm {
+            genitive: Some(vec![InflectionForm {
                 contracted: Some("ης".to_string()),
                 ..Default::default()
             }]),
-            dative: Some(vec![NounInflectionForm {
+            dative: Some(vec![InflectionForm {
                 contracted: Some("ῃ".to_string()),
                 ..Default::default()
             }]),
@@ -232,23 +232,23 @@ fn get_1st_fem_h_endings() -> Box<NounInflectionNumbers> {
 fn get_1st_fem_a_breve_endings() -> Box<NounInflectionNumbers> {
     Box::from(NounInflectionNumbers {
         singular: Some(NounInflectionCases {
-            nominative: Some(vec![NounInflectionForm {
+            nominative: Some(vec![InflectionForm {
                 contracted: Some("ᾰ".to_string()),
                 ..Default::default()
             }]),
-            vocative: Some(vec![NounInflectionForm {
+            vocative: Some(vec![InflectionForm {
                 contracted: Some("ᾰ".to_string()),
                 ..Default::default()
             }]),
-            accusative: Some(vec![NounInflectionForm {
+            accusative: Some(vec![InflectionForm {
                 contracted: Some("ᾰν".to_string()),
                 ..Default::default()
             }]),
-            genitive: Some(vec![NounInflectionForm {
+            genitive: Some(vec![InflectionForm {
                 contracted: Some("ᾱς".to_string()),
                 ..Default::default()
             }]),
-            dative: Some(vec![NounInflectionForm {
+            dative: Some(vec![InflectionForm {
                 contracted: Some("ᾳ".to_string()),
                 ..Default::default()
             }]),
@@ -261,23 +261,23 @@ fn get_1st_fem_a_breve_endings() -> Box<NounInflectionNumbers> {
 fn get_1st_fem_a_macron_endings() -> Box<NounInflectionNumbers> {
     Box::from(NounInflectionNumbers {
         singular: Some(NounInflectionCases {
-            nominative: Some(vec![NounInflectionForm {
+            nominative: Some(vec![InflectionForm {
                 contracted: Some("ᾱ".to_string()),
                 ..Default::default()
             }]),
-            vocative: Some(vec![NounInflectionForm {
+            vocative: Some(vec![InflectionForm {
                 contracted: Some("ᾱ".to_string()),
                 ..Default::default()
             }]),
-            accusative: Some(vec![NounInflectionForm {
+            accusative: Some(vec![InflectionForm {
                 contracted: Some("ᾱν".to_string()),
                 ..Default::default()
             }]),
-            genitive: Some(vec![NounInflectionForm {
+            genitive: Some(vec![InflectionForm {
                 contracted: Some("ᾱς".to_string()),
                 ..Default::default()
             }]),
-            dative: Some(vec![NounInflectionForm {
+            dative: Some(vec![InflectionForm {
                 contracted: Some("ᾳ".to_string()),
                 ..Default::default()
             }]),
@@ -290,23 +290,23 @@ fn get_1st_fem_a_macron_endings() -> Box<NounInflectionNumbers> {
 fn get_1st_mas_hs_endings() -> Box<NounInflectionNumbers> {
     Box::from(NounInflectionNumbers {
         singular: Some(NounInflectionCases {
-            nominative: Some(vec![NounInflectionForm {
+            nominative: Some(vec![InflectionForm {
                 contracted: Some("ης".to_string()),
                 ..Default::default()
             }]),
-            vocative: Some(vec![NounInflectionForm {
+            vocative: Some(vec![InflectionForm {
                 contracted: Some("η".to_string()),
                 ..Default::default()
             }]),
-            accusative: Some(vec![NounInflectionForm {
+            accusative: Some(vec![InflectionForm {
                 contracted: Some("ην".to_string()),
                 ..Default::default()
             }]),
-            genitive: Some(vec![NounInflectionForm {
+            genitive: Some(vec![InflectionForm {
                 contracted: Some("ου".to_string()),
                 ..Default::default()
             }]),
-            dative: Some(vec![NounInflectionForm {
+            dative: Some(vec![InflectionForm {
                 contracted: Some("ῃ".to_string()),
                 ..Default::default()
             }]),
@@ -319,23 +319,23 @@ fn get_1st_mas_hs_endings() -> Box<NounInflectionNumbers> {
 fn get_1st_mas_as_endings() -> Box<NounInflectionNumbers> {
     Box::from(NounInflectionNumbers {
         singular: Some(NounInflectionCases {
-            nominative: Some(vec![NounInflectionForm {
+            nominative: Some(vec![InflectionForm {
                 contracted: Some("ᾱς".to_string()),
                 ..Default::default()
             }]),
-            vocative: Some(vec![NounInflectionForm {
+            vocative: Some(vec![InflectionForm {
                 contracted: Some("ᾱ".to_string()),
                 ..Default::default()
             }]),
-            accusative: Some(vec![NounInflectionForm {
+            accusative: Some(vec![InflectionForm {
                 contracted: Some("ᾱν".to_string()),
                 ..Default::default()
             }]),
-            genitive: Some(vec![NounInflectionForm {
+            genitive: Some(vec![InflectionForm {
                 contracted: Some("ου".to_string()),
                 ..Default::default()
             }]),
-            dative: Some(vec![NounInflectionForm {
+            dative: Some(vec![InflectionForm {
                 contracted: Some("ᾳ".to_string()),
                 ..Default::default()
             }]),

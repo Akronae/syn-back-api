@@ -57,7 +57,7 @@ impl Request {
             redis::set(&key, &text).await?;
         }
 
-        return Ok(text);
+        Ok(text)
     }
 }
 

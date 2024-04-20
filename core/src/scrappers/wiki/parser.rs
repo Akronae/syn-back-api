@@ -3,11 +3,11 @@ use tracing::*;
 use crate::{
     api::lexicon::lexicon_model::LexiconEntry,
     borrow::Cow,
-    grammar::{Declension, PartOfSpeech},
+    grammar::{Declension, Mood, PartOfSpeech},
     scrappers::wiki::{
         article, conjunction,
         details::{search_word_details, SearchMode},
-        noun, preposition, pronoun, verb,
+        noun, participle, preposition, pronoun, verb,
     },
 };
 
@@ -29,6 +29,7 @@ pub async fn parse_word(
     let details = search_word_details(greek_word.clone(), declension, mode).await?;
     debug!("{:?}", details.clone());
 
+    let mut lemma = details.lemma.clone();
     let mut inflections = Vec::new();
     let definitions;
     let mut declension = declension.clone();
@@ -39,9 +40,16 @@ pub async fn parse_word(
         definitions = noun.definitions;
         declension = noun.declension;
     } else if PartOfSpeech::Verb == declension.part_of_speech {
-        let verb = verb::scrap_verb(&details.lemma).await?;
-        definitions = verb.definitions;
-        inflections.extend(verb.inflections);
+        if matches!(declension.mood, Some(Mood::Participle)) {
+            let participle = participle::scrap_participle(&details.lemma).await?;
+            inflections.extend(participle.inflections);
+            definitions = vec![];
+            lemma = participle.verb_lemma.into();
+        } else {
+            let verb = verb::scrap_verb(&details.lemma).await?;
+            definitions = verb.definitions;
+            inflections.extend(verb.inflections);
+        }
     } else if matches!(declension.part_of_speech, PartOfSpeech::Article(_)) {
         let article = article::scrap_article(&details.lemma).await?;
         definitions = article.definitions;
@@ -65,7 +73,7 @@ pub async fn parse_word(
 
     Ok(ParseWordResult {
         entry: LexiconEntry {
-            lemma: details.lemma.into(),
+            lemma: lemma.into(),
             inflections,
             definitions,
         },

@@ -1,6 +1,6 @@
 use crate::{
     api::lexicon::lexicon_model::{
-        LexiconEntryDefinition, NounInflectionCases, NounInflectionForm, NounInflectionGenders,
+        InflectionForm, LexiconEntryDefinition, NounInflectionCases, NounInflectionGenders,
         NounInflectionNumbers, WordInflection,
     },
     error::SafeError,
@@ -169,9 +169,9 @@ fn fill_cases(word: &ParsedWord, cases: &mut NounInflectionCases) {
     }
 }
 
-fn fill_forms(word: &ParsedWord, forms: &mut Vec<NounInflectionForm>) {
+fn fill_forms(word: &ParsedWord, forms: &mut Vec<InflectionForm>) {
     for part in word.text.split('\n') {
-        forms.push(NounInflectionForm {
+        forms.push(InflectionForm {
             contracted: Some(part.into()),
             ..Default::default()
         })

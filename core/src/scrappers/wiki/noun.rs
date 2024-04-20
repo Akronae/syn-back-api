@@ -1,6 +1,6 @@
 use crate::{
     api::lexicon::lexicon_model::{
-        LexiconEntryDefinition, NounInflectionCases, NounInflectionForm, NounInflectionGenders,
+        InflectionForm, LexiconEntryDefinition, NounInflectionCases, NounInflectionGenders,
         NounInflectionNumbers, WordInflection,
     },
     borrow::Cow,
@@ -43,6 +43,12 @@ pub async fn scrap_noun(lemma: &str, declension: &Declension) -> Result<Scrapped
     let mut declension = declension.clone();
     declension.gender = Some(gender);
     declension.decl_type = Some(extract_declension_type(&doc)?);
+    if declension.case.is_none() {
+        declension.case = Some(Case::Nominative);
+    }
+    if declension.number.is_none() {
+        declension.number = Some(Number::Singular);
+    }
 
     let mut inflections = vec![];
     let selector = select(".NavFrame")?;
@@ -100,7 +106,7 @@ fn extract_declension_type(doc: &Html) -> Result<DeclensionType, SafeError> {
         _ => return Err(format!("cannot match declension type: '{decl_str}'").into()),
     };
 
-    return Ok(decl_type);
+    Ok(decl_type)
 }
 
 pub fn scrap_noun_defs(doc: &Html, noun: &Noun) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
@@ -210,9 +216,9 @@ fn fill_cases(word: &ParsedWord, cases: &mut NounInflectionCases) {
     }
 }
 
-fn fill_forms(word: &ParsedWord, forms: &mut Vec<NounInflectionForm>) {
+pub fn fill_forms(word: &ParsedWord, forms: &mut Vec<InflectionForm>) {
     for part in word.text.split('\n') {
-        forms.push(NounInflectionForm {
+        forms.push(InflectionForm {
             contracted: Some(part.into()),
             ..Default::default()
         })

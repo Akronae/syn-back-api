@@ -1,6 +1,6 @@
 use crate::{
     api::lexicon::lexicon_model::{
-        LexiconEntryDefinition, VerbInflectionContractions, VerbInflectionForm,
+        InflectionForm, LexiconEntryDefinition, VerbInflectionContractions,
         VerbInflectionInfinitive, VerbInflectionMoods, VerbInflectionNumbers,
         VerbInflectionParticiple, VerbInflectionPersons, VerbInflectionTenses,
         VerbInflectionThemes, VerbInflectionVoices, WordInflection,
@@ -129,7 +129,7 @@ fn parsed_words_to_inflection(words: &[ParsedWord]) -> VerbInflectionThemes {
     infl
 }
 
-fn fill_themes(word: &ParsedWord, themes: &mut VerbInflectionThemes) {
+pub fn fill_themes(word: &ParsedWord, themes: &mut VerbInflectionThemes) {
     if themes.thematic.is_none() {
         themes.thematic = Some(Default::default());
     }
@@ -284,23 +284,23 @@ fn fill_persons(word: &ParsedWord, persons: &mut VerbInflectionPersons) {
     }
 }
 
-fn fill_forms(word: &ParsedWord, forms: &mut Vec<VerbInflectionForm>) {
+fn fill_forms(word: &ParsedWord, forms: &mut Vec<InflectionForm>) {
     for part in word.text.split('\n') {
         if part.ends_with(')') {
             let end_group = part.chars().skip_while(|c| *c != '(').collect::<String>();
             let form_a = part.chars().take_while(|c| *c != '(').collect::<String>();
             let form_b = format!("{}{}", form_a, end_group.replace(['(', ')'], ""));
 
-            forms.push(VerbInflectionForm {
+            forms.push(InflectionForm {
                 contracted: Some(form_a),
                 ..Default::default()
             });
-            forms.push(VerbInflectionForm {
+            forms.push(InflectionForm {
                 contracted: Some(form_b),
                 ..Default::default()
             });
         } else {
-            forms.push(VerbInflectionForm {
+            forms.push(InflectionForm {
                 contracted: Some(part.into()),
                 ..Default::default()
             })

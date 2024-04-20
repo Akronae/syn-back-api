@@ -1,5 +1,6 @@
 use anyhow::Context;
 use async_recursion::async_recursion;
+use reqwest::Method;
 use serde::Deserialize;
 
 use tracing::{debug, info};
@@ -8,7 +9,8 @@ use crate::{
     api::lexicon::lexicon_model::LexiconEntryDefinition,
     borrow::Cow,
     error::SafeError,
-    grammar::{Declension, Noun, Number, PartOfSpeech, Person},
+    grammar::{Declension, Mood, Noun, Number, PartOfSpeech, Person},
+    request::request,
     scrappers::wiki::{noun, page},
     utils::{
         scrapper::select::select,
@@ -19,8 +21,9 @@ use crate::{
     },
 };
 
-use super::{article, conjunction, errors::ParseWordError, preposition, pronoun, verb};
+use super::{article, conjunction, errors::ParseWordError, participle, preposition, pronoun, verb};
 
+#[allow(dead_code)]
 pub enum SearchMode {
     Query,
     Opensearch,
@@ -39,7 +42,7 @@ pub async fn search_word_details(
 ) -> Result<WordDetails, ParseWordError> {
     let pos = &declension.part_of_speech;
     let lemmas = match mode {
-        SearchMode::Query => query(word.clone(), pos).await?,
+        SearchMode::Query => query(word.clone(), declension).await?,
         SearchMode::Opensearch => opensearch(word.clone()).await?,
     };
 
@@ -48,7 +51,7 @@ pub async fn search_word_details(
         .filter(|x| x.score > 0.0);
 
     for lemma in lemmas {
-        let lemma = validate_page(lemma.value.clone(), pos, word.clone()).await?;
+        let lemma = validate_page(lemma.value.clone(), declension, word.clone()).await?;
 
         if let Some(lemma) = lemma {
             return Ok(WordDetails { lemma });
@@ -71,21 +74,29 @@ pub async fn search_word_details(
 #[async_recursion(?Send)]
 async fn validate_page(
     lemma: Cow<str>,
-    pos: &PartOfSpeech,
+    decl: &Declension,
     query: Cow<str>,
 ) -> Result<Option<Cow<str>>, SafeError> {
+    let pos = decl.part_of_speech;
     let doc = page::scrap(lemma.as_ref()).await?;
 
-    if matches!(pos, PartOfSpeech::Noun(Noun::Common)) && doc.select(&select("#Noun")?).next().is_none() {
+    if matches!(pos, PartOfSpeech::Noun(Noun::Common))
+        && doc.select(&select("#Noun")?).next().is_none()
+    {
         return Ok(None);
     }
-    if matches!(pos, PartOfSpeech::Noun(Noun::Proper)) && doc.select(&select("#Proper_noun")?).next().is_none() {
+    if matches!(pos, PartOfSpeech::Noun(Noun::Proper))
+        && doc.select(&select("#Proper_noun")?).next().is_none()
+    {
         return Ok(None);
     }
 
     let def = match pos {
-        PartOfSpeech::Noun(noun) => noun::scrap_noun_defs(&doc, noun)?,
-        PartOfSpeech::Verb => verb::scrap_verb_defs(&doc)?,
+        PartOfSpeech::Noun(noun) => noun::scrap_noun_defs(&doc, &noun)?,
+        PartOfSpeech::Verb => match decl.mood {
+            Some(Mood::Participle) => participle::scrap_participle_defs(&doc)?,
+            _ => verb::scrap_verb_defs(&doc)?,
+        },
         PartOfSpeech::Article(_) => article::scrap_article_defs(&doc)?,
         PartOfSpeech::Pronoun(_) => pronoun::scrap_pronoun_defs(&doc)?,
         PartOfSpeech::Conjunction => conjunction::scrap_conjunction_defs(&doc)?,
@@ -94,10 +105,10 @@ async fn validate_page(
     };
 
     if let Some(LexiconEntryDefinition::FormOf(formof)) = def.first() {
-        if similarity_score(query.clone(), formof.clone().into())
+        if similarity_score(query.clone(), formof.lemma.clone().into())
             >= similarity_score(query.clone(), lemma.clone())
         {
-            return validate_page(formof.clone().into(), pos, query).await;
+            return validate_page(formof.lemma.clone().into(), decl, query).await;
         }
     }
 
@@ -114,15 +125,16 @@ async fn validate_page(
         }
 
         if let Some(LexiconEntryDefinition::FormOf(formof)) = def.first() {
-            debug!("found form of {formof}");
-            return validate_page(formof.clone().into(), pos, query.clone()).await;
+            debug!("found form of {}", formof.lemma);
+            return validate_page(formof.lemma.clone().into(), decl, query.clone()).await;
         }
     }
 
     Ok(Some(lemma))
 }
 
-fn build_query_urls(word: Cow<str>, pos: &PartOfSpeech) -> Vec<Cow<str>> {
+fn build_query_urls(word: Cow<str>, decl: &Declension) -> Vec<Cow<str>> {
+    let pos = &decl.part_of_speech;
     let categories = match pos {
         PartOfSpeech::Noun(noun) => match noun {
             Noun::Common => vec!["Ancient_Greek_nouns", "Ancient_Greek_noun_forms"],
@@ -131,7 +143,10 @@ fn build_query_urls(word: Cow<str>, pos: &PartOfSpeech) -> Vec<Cow<str>> {
                 "Ancient_Greek_proper_noun_forms",
             ],
         },
-        PartOfSpeech::Verb => vec!["Ancient_Greek_verbs", "Ancient_Greek_verb_forms"],
+        PartOfSpeech::Verb => match decl.mood {
+            Some(Mood::Participle) => vec!["Ancient_Greek_participles", "Ancient_Greek_verb_forms"],
+            _ => vec!["Ancient_Greek_verbs", "Ancient_Greek_verb_forms"],
+        },
         PartOfSpeech::Article(_) => vec!["Ancient_Greek_articles", "Ancient_Greek_article_forms"],
         PartOfSpeech::Conjunction => vec!["Ancient_Greek_conjunctions"],
         PartOfSpeech::Pronoun(_) => vec!["Ancient_Greek_pronouns", "Ancient_Greek_pronoun_forms"],
@@ -155,13 +170,18 @@ struct ListResponse {
     pub query: ListResponseQuery,
 }
 
-async fn query(word: Cow<str>, pos: &PartOfSpeech) -> Result<Vec<Cow<str>>, SafeError> {
-    let urls = build_query_urls(word.clone(), pos);
+async fn query(word: Cow<str>, decl: &Declension) -> Result<Vec<Cow<str>>, SafeError> {
+    let urls = build_query_urls(word.clone(), decl);
     let mut lemmas = Vec::new();
 
     for url in urls {
         debug!("fetching {}", url.as_ref());
-        let response = reqwest::get(url.as_ref()).await?.text().await?;
+        let response = request()
+            .with_method(Method::GET)
+            .with_url(url.to_string())
+            .with_cache(true)
+            .text()
+            .await?;
         let response: ListResponse = serde_json::from_str::<ListResponse>(&response)?;
 
         let lems = response
@@ -195,7 +215,12 @@ struct OpenSearchResponse(Vec<VecOrSingle<Cow<str>>>);
 async fn opensearch(word: Cow<str>) -> Result<Vec<Cow<str>>, SafeError> {
     let url = build_opensearch_url(word);
     debug!("fetching {}", url.as_ref());
-    let response = reqwest::get(url.as_ref()).await?.text().await?;
+    let response = request()
+        .with_method(Method::GET)
+        .with_url(url.to_string())
+        .with_cache(true)
+        .text()
+        .await?;
     let response = serde_json::from_str::<OpenSearchResponse>(&response)?;
 
     let elem_1 = response.0.get(1).context("no elem at index 1")?;

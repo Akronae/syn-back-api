@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use strum::Display;
 
 use crate::grammar::{Declension, DeclensionType, Dialect};
 
@@ -10,11 +11,17 @@ pub struct LexiconEntry {
     pub definitions: Vec<LexiconEntryDefinition>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Display)]
 #[serde(rename_all = "camelCase")]
 pub enum LexiconEntryDefinition {
     Litteral(String),
-    FormOf(String),
+    FormOf(DefinitionFormOf),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DefinitionFormOf {
+    pub lemma: String,
+    pub text: String,
 }
 
 #[serde_with::skip_serializing_none]
@@ -26,6 +33,16 @@ pub struct WordInflection {
     pub article: Option<Box<NounInflectionGenders>>,
     pub pronoun: Option<Box<NounInflectionGenders>>,
     pub verb: Option<Box<VerbInflectionTenses>>,
+    pub adverb: Option<Vec<InflectionForm>>,
+    pub adjective: Option<WordAdjective>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
+pub struct WordAdjective {
+    pub positive: Option<Vec<InflectionForm>>,
+    pub comparative: Option<Vec<InflectionForm>>,
+    pub superlative: Option<Vec<InflectionForm>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -71,9 +88,9 @@ pub struct VerbInflectionMoods {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct VerbInflectionInfinitive {
-    pub active: Option<Vec<VerbInflectionForm>>,
-    pub middle: Option<Vec<VerbInflectionForm>>,
-    pub passive: Option<Vec<VerbInflectionForm>>,
+    pub active: Option<Vec<InflectionForm>>,
+    pub middle: Option<Vec<InflectionForm>>,
+    pub passive: Option<Vec<InflectionForm>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -103,14 +120,14 @@ pub struct VerbInflectionNumbers {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct VerbInflectionPersons {
-    pub first: Option<Vec<VerbInflectionForm>>,
-    pub second: Option<Vec<VerbInflectionForm>>,
-    pub third: Option<Vec<VerbInflectionForm>>,
+    pub first: Option<Vec<InflectionForm>>,
+    pub second: Option<Vec<InflectionForm>>,
+    pub third: Option<Vec<InflectionForm>>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
-pub struct VerbInflectionForm {
+pub struct InflectionForm {
     pub contracted: Option<String>,
     pub uncontracted: Option<Vec<String>>,
 }
@@ -134,18 +151,11 @@ pub struct NounInflectionNumbers {
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct NounInflectionCases {
-    pub nominative: Option<Vec<NounInflectionForm>>,
-    pub genitive: Option<Vec<NounInflectionForm>>,
-    pub dative: Option<Vec<NounInflectionForm>>,
-    pub accusative: Option<Vec<NounInflectionForm>>,
-    pub vocative: Option<Vec<NounInflectionForm>>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
-pub struct NounInflectionForm {
-    pub contracted: Option<String>,
-    pub uncontracted: Option<Vec<String>>,
+    pub nominative: Option<Vec<InflectionForm>>,
+    pub genitive: Option<Vec<InflectionForm>>,
+    pub dative: Option<Vec<InflectionForm>>,
+    pub accusative: Option<Vec<InflectionForm>>,
+    pub vocative: Option<Vec<InflectionForm>>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]

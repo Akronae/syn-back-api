@@ -13,12 +13,10 @@ use crate::texts::{Book, Collection};
 #[allow(dead_code)]
 pub enum PartOfSpeech {
     Verb,
-    Adjective,
     Adverb,
     Preposition,
     Conjunction,
     Interjection,
-    Participle,
     Numeral,
     Determiner,
     #[serde(untagged)]
@@ -27,6 +25,8 @@ pub enum PartOfSpeech {
     Pronoun(Pronoun),
     #[serde(untagged)]
     Article(Article),
+    #[serde(untagged)]
+    Adjective(Adjective),
 }
 
 #[derive(
@@ -75,6 +75,21 @@ pub enum Article {
     Definite,
     #[serde(rename = "article_indefinite")]
     Indefinite,
+}
+
+#[derive(
+    Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash, Eq, PartialOrd, Ord,
+)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
+pub enum Adjective {
+    #[serde(rename = "adjective_positive")]
+    Positive,
+    #[serde(rename = "adjective_comparative")]
+    Comparative,
+    #[serde(rename = "adjective_superlative")]
+    Superlative,
 }
 
 #[derive(

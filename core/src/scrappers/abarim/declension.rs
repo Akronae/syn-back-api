@@ -1,7 +1,7 @@
 use crate::{
     grammar::{
-        Article, Case, Declension, DeclensionType, Gender, Mood, Noun, Number, PartOfSpeech,
-        Person, Pronoun, Tense, Voice,
+        Adjective, Article, Case, Declension, DeclensionType, Gender, Mood, Noun, Number,
+        PartOfSpeech, Person, Pronoun, Tense, Voice,
     },
     texts::Book,
 };
@@ -80,14 +80,14 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         "noun" => PartOfSpeech::Noun(Noun::Common),
         "noun (name)" => PartOfSpeech::Noun(Noun::Proper),
         "verb" => PartOfSpeech::Verb,
+        "participle" => PartOfSpeech::Verb,
         "def art" => PartOfSpeech::Article(Article::Definite),
         "conjunction" => PartOfSpeech::Conjunction,
         "preposition" => PartOfSpeech::Preposition,
         "rel pron" => PartOfSpeech::Pronoun(Pronoun::Relative),
         "dem pron" => PartOfSpeech::Pronoun(Pronoun::Demonstrative),
-        "participle" => PartOfSpeech::Participle,
-        "adjective" => PartOfSpeech::Adjective,
-        "adjective (name)" => PartOfSpeech::Adjective,
+        "adjective" => PartOfSpeech::Adjective(Adjective::Positive),
+        "adjective (name)" => PartOfSpeech::Adjective(Adjective::Positive),
         "adverb" => PartOfSpeech::Adverb,
         s if s.ends_with("pers pron") => PartOfSpeech::Pronoun(Pronoun::Personal),
         default => panic!("unknown part of speech: {default}"),
@@ -108,11 +108,14 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
             c if c.contains(&"imp") => Some(Mood::Imperative),
             c if c.contains(&"opt") => Some(Mood::Optative),
             c if c.contains(&"inf") => Some(Mood::Infinitive),
-            c if c.contains(&"part") => Some(Mood::Participle),
-            _ => panic!("cannot find mood with comps: {:?}", comps),
+            c if c.contains(&"par") => Some(Mood::Participle),
+            _ => panic!(
+                "cannot find mood with comps: {:?}, comp_1_dash_splits: {:?}",
+                comps, comp_1_dash_splits
+            ),
         },
         PartOfSpeech::Noun(_)
-        | PartOfSpeech::Adjective
+        | PartOfSpeech::Adjective(_)
         | PartOfSpeech::Article(_)
         | PartOfSpeech::Adverb
         | PartOfSpeech::Conjunction
@@ -120,12 +123,11 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Interjection
         | PartOfSpeech::Numeral
         | PartOfSpeech::Preposition
-        | PartOfSpeech::Participle
         | PartOfSpeech::Pronoun(_) => None,
     };
 
     let comp_person = match pos {
-        PartOfSpeech::Participle | PartOfSpeech::Verb => comp_2,
+        PartOfSpeech::Verb => comp_2,
         PartOfSpeech::Pronoun(_) => comp_0,
         _ => comp_1,
     };
@@ -145,9 +147,8 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Preposition
         | PartOfSpeech::Pronoun(Pronoun::Relative)
         | PartOfSpeech::Pronoun(Pronoun::Demonstrative)
-        | PartOfSpeech::Adjective
+        | PartOfSpeech::Adjective(_)
         | PartOfSpeech::Adverb
-        | PartOfSpeech::Participle
         | PartOfSpeech::Interjection => None,
 
         PartOfSpeech::Article(_)
@@ -155,14 +156,16 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Pronoun(_)
         | PartOfSpeech::Numeral => extract_person(),
         PartOfSpeech::Verb => match mood {
-            Some(Mood::Infinitive) => None,
+            Some(Mood::Infinitive) | Some(Mood::Participle) => None,
             _ => extract_person(),
         },
     };
 
     let number_comp = match pos {
-        PartOfSpeech::Verb => comp_2_space_splits.to_owned(),
-        PartOfSpeech::Participle => comp_2_dash_splits.to_owned(),
+        PartOfSpeech::Verb => match mood {
+            Some(Mood::Participle) => comp_2_dash_splits.to_owned(),
+            _ => comp_2_space_splits.to_owned(),
+        },
         _ => comp_1_dash_splits.to_owned(),
     };
     let extract_number = || match number_comp {
@@ -177,9 +180,8 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         PartOfSpeech::Pronoun(Pronoun::Personal)
         | PartOfSpeech::Pronoun(Pronoun::Relative)
         | PartOfSpeech::Pronoun(Pronoun::Demonstrative)
-        | PartOfSpeech::Adjective
+        | PartOfSpeech::Adjective(_)
         | PartOfSpeech::Noun(_)
-        | PartOfSpeech::Participle
         | PartOfSpeech::Article(_) => extract_number(),
         PartOfSpeech::Verb => match mood {
             Some(Mood::Infinitive) => None,
@@ -189,11 +191,22 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         _ => panic!("cannot find number with comps: {:?}", comps),
     };
 
-    let comp_gender = if pos == PartOfSpeech::Participle {
+    let comp_gender = if mood == Some(Mood::Participle) {
         comp_2
     } else {
         comp_1
     };
+
+    let extract_gender = || match comp_gender {
+        val if val.ends_with("-mas") => Some(Gender::Masculine),
+        val if val.ends_with("-fem") => Some(Gender::Feminine),
+        val if val.ends_with("-neu") => Some(Gender::Neuter),
+        _ => panic!(
+            " cannot find gender with comps: {:?} and pos {:?}",
+            comps, pos
+        ),
+    };
+
     let gender = match pos {
         PartOfSpeech::Pronoun(Pronoun::Personal)
             if person != Some(Person::Third) || number != Some(Number::Singular) =>
@@ -204,33 +217,33 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Noun(Noun::Proper)
         | PartOfSpeech::Pronoun(_)
         | PartOfSpeech::Article(_)
-        | PartOfSpeech::Participle
-        | PartOfSpeech::Adjective => match comp_gender {
-            val if val.ends_with("-mas") => Some(Gender::Masculine),
-            val if val.ends_with("-fem") => Some(Gender::Feminine),
-            val if val.ends_with("-neu") => Some(Gender::Neuter),
-            _ => panic!(
-                " cannot find gender with comps: {:?} and pos {:?}",
-                comps, pos
-            ),
-        },
+        | PartOfSpeech::Adjective(_) => extract_gender(),
+        PartOfSpeech::Verb => {
+            if matches!(mood, Some(Mood::Participle)) {
+                extract_gender()
+            } else {
+                None
+            }
+        }
         _ => None,
     };
 
+    let extract_case = |comp: &[&str]| match comp.to_owned() {
+        s if s.contains(&"nom") => Some(Case::Nominative),
+        s if s.contains(&"gen") => Some(Case::Genitive),
+        s if s.contains(&"dat") => Some(Case::Dative),
+        s if s.contains(&"acc") => Some(Case::Accusative),
+        s if s.contains(&"voc") => Some(Case::Vocative),
+        _ => panic!("cannot find case with comps: {:?}", comps),
+    };
+
     let case = match pos {
-        PartOfSpeech::Verb
-        | PartOfSpeech::Conjunction
-        | PartOfSpeech::Preposition
-        | PartOfSpeech::Participle
-        | PartOfSpeech::Adverb => None,
-        _ => match comp_1_dash_splits.to_owned() {
-            s if s.contains(&"nom") => Some(Case::Nominative),
-            s if s.contains(&"gen") => Some(Case::Genitive),
-            s if s.contains(&"dat") => Some(Case::Dative),
-            s if s.contains(&"acc") => Some(Case::Accusative),
-            s if s.contains(&"voc") => Some(Case::Vocative),
-            _ => panic!("cannot find case with comps: {:?}", comps),
+        PartOfSpeech::Conjunction | PartOfSpeech::Preposition | PartOfSpeech::Adverb => None,
+        PartOfSpeech::Verb => match mood {
+            Some(Mood::Participle) => extract_case(&comp_2_dash_splits),
+            _ => None,
         },
+        _ => extract_case(&comp_1_dash_splits),
     };
 
     let voice_comp = comp_1_dash_splits.to_owned();
@@ -239,7 +252,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Article(_)
         | PartOfSpeech::Pronoun(_)
         | PartOfSpeech::Preposition
-        | PartOfSpeech::Adjective
+        | PartOfSpeech::Adjective(_)
         | PartOfSpeech::Adverb
         | PartOfSpeech::Conjunction => None,
         _ => match voice_comp {
@@ -264,7 +277,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
         | PartOfSpeech::Article(_)
         | PartOfSpeech::Conjunction
         | PartOfSpeech::Adverb
-        | PartOfSpeech::Adjective
+        | PartOfSpeech::Adjective(_)
         | PartOfSpeech::Interjection
         | PartOfSpeech::Preposition
         | PartOfSpeech::Pronoun(_) => None,

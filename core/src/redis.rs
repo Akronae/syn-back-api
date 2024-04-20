@@ -16,7 +16,7 @@ async fn get_redis() -> Result<MultiplexedConnection, SafeError> {
     let conn = CONN
         .get()
         .with_context(|| "could not get redis instance from OnceCell")?;
-    return Ok(conn.clone());
+    Ok(conn.clone())
 }
 
 fn get_redis_key(key: &str) -> String {

@@ -4,7 +4,8 @@ use crate::{
     borrow::Cow,
     error::SafeError,
     grammar::{
-        Case, Contraction, DeclensionType, Dialect, Gender, Mood, Number, Person, Tense, Voice,
+        Adjective, Case, Contraction, DeclensionType, Dialect, Gender, Mood, Number, PartOfSpeech,
+        Person, Tense, Theme, Voice,
     },
     utils::{scrapper::select::select, str::skip_last::SkipLastVec},
 };
@@ -205,6 +206,8 @@ pub enum ParsingComp {
     Voice(Voice),
     Person(Person),
     Contraction(Contraction),
+    PartOfSpeech(PartOfSpeech),
+    Theme(Theme),
 }
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct ParsedWord {
@@ -341,6 +344,19 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             }
             if header.content == ("n") || header.content == ("neuter") {
                 parsing.push(ParsingComp::Gender(Gender::Neuter));
+            }
+            if header.content == ("adverb") {
+                parsing.push(ParsingComp::PartOfSpeech(PartOfSpeech::Adverb));
+            }
+            if header.content == ("comparative") {
+                parsing.push(ParsingComp::PartOfSpeech(PartOfSpeech::Adjective(
+                    Adjective::Comparative,
+                )));
+            }
+            if header.content == ("superlative") {
+                parsing.push(ParsingComp::PartOfSpeech(PartOfSpeech::Adjective(
+                    Adjective::Superlative,
+                )));
             }
         }
 

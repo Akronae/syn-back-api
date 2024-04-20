@@ -3,10 +3,13 @@ use anyhow::Context;
 use scraper::{Element, ElementRef};
 
 use crate::{
-    api::lexicon::lexicon_model::LexiconEntryDefinition,
+    api::lexicon::lexicon_model::{DefinitionFormOf, LexiconEntryDefinition},
     borrow::Cow,
     error::SafeError,
-    utils::scrapper::{filter_by_tag::FilterByTag, select::select},
+    utils::scrapper::{
+        filter_by_tag::FilterByTag,
+        select::{select},
+    },
 };
 
 pub fn extract_word_defs(
@@ -28,7 +31,7 @@ pub fn extract_word_defs(
             .select(&select(".form-of-definition")?)
             .next()
         {
-            let text = formof
+            let formof_lemma = formof
                 .select(&select(".form-of-definition-link .Polyt a")?)
                 .next()
                 .with_context(|| "cannot find form-of-definition-link".to_string())?
@@ -36,7 +39,11 @@ pub fn extract_word_defs(
                 .with_context(|| "no title attribute")?
                 .trim()
                 .to_string();
-            definitions.push(LexiconEntryDefinition::FormOf(text));
+            let text = formof.text().collect::<String>();
+            definitions.push(LexiconEntryDefinition::FormOf(DefinitionFormOf {
+                lemma: formof_lemma,
+                text,
+            }));
         } else {
             let text = ElementRef::wrap(li)
                 .unwrap()

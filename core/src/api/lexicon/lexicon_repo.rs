@@ -8,7 +8,7 @@ use nameof::name_of;
 use crate::{
     borrow::Cow,
     error::{MapErrSafe, SafeError},
-    grammar::{Declension, PartOfSpeech},
+    grammar::{Declension, Mood, PartOfSpeech},
     persistence::get_db,
     utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
 };
@@ -178,15 +178,32 @@ impl Declension {
                 None => return Err("voice required".to_string().into()),
             });
 
-            s.push(match &self.number {
-                Some(x) => str(x),
-                None => return Err("number required".to_string().into()),
-            });
+            if matches!(self.mood, Some(Mood::Participle)) {
+                s.push(match &self.gender {
+                    Some(x) => str(x),
+                    None => return Err("gender required".to_string().into()),
+                });
 
-            s.push(match &self.person {
-                Some(x) => str(x),
-                None => return Err("person required".to_string().into()),
-            });
+                s.push(match &self.number {
+                    Some(x) => str(x),
+                    None => return Err("number required".to_string().into()),
+                });
+
+                s.push(match &self.case {
+                    Some(x) => str(x),
+                    None => return Err("case required".to_string().into()),
+                })
+            } else {
+                s.push(match &self.number {
+                    Some(x) => str(x),
+                    None => return Err("number required".to_string().into()),
+                });
+
+                s.push(match &self.person {
+                    Some(x) => str(x),
+                    None => return Err("person required".to_string().into()),
+                });
+            }
 
             s.push("[]".into());
             s.push("contracted".into());
