@@ -44,10 +44,26 @@ impl WordInflection {
             let pronoun = self.pronoun.as_ref().unwrap();
 
             return find_inflection_noun(declension, pronoun);
-        } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction)
-            || matches!(declension.part_of_speech, PartOfSpeech::Preposition)
-        {
-            return vec![];
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Quantifier) {
+            let quantifier = self.quantifier.as_ref().unwrap();
+
+            return find_inflection_noun(declension, quantifier);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Particle) {
+            let particle = self.particle.as_ref().unwrap();
+
+            return find_inflection_form(particle);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Preposition) {
+            let preposition = self.preposition.as_ref().unwrap();
+
+            return find_inflection_form(preposition);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Adverb) {
+            let adverb = self.adverb.as_ref().unwrap();
+
+            return find_inflection_form(adverb);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Numeral(_)) {
+            let numeral = self.numeral.as_ref().unwrap();
+
+            return find_inflection_noun(declension, numeral);
         } else {
             panic!(
                 "Unsupported part of speech: {:?}",
@@ -125,7 +141,7 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
         None => panic!("No person found for {:?}", declension),
     };
 
-    find_inflection_verb_form(person)
+    find_inflection_form(person)
 }
 
 fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -> Vec<String> {
@@ -149,7 +165,7 @@ fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -
         Some(Case::Vocative) => number.vocative.as_ref().unwrap(),
         None => return vec![],
     };
-    return case.iter().flat_map(|x| x.contracted.clone()).collect();
+    find_inflection_form(case)
 }
 
 fn find_inflection_verb_infinitive(
@@ -157,15 +173,9 @@ fn find_inflection_verb_infinitive(
     infinitive: &VerbInflectionInfinitive,
 ) -> Vec<String> {
     match declension.voice {
-        Some(Voice::Active) => {
-            return find_inflection_verb_form(infinitive.active.as_ref().unwrap())
-        }
-        Some(Voice::Middle) => {
-            return find_inflection_verb_form(infinitive.middle.as_ref().unwrap())
-        }
-        Some(Voice::Passive) => {
-            return find_inflection_verb_form(infinitive.passive.as_ref().unwrap())
-        }
+        Some(Voice::Active) => return find_inflection_form(infinitive.active.as_ref().unwrap()),
+        Some(Voice::Middle) => return find_inflection_form(infinitive.middle.as_ref().unwrap()),
+        Some(Voice::Passive) => return find_inflection_form(infinitive.passive.as_ref().unwrap()),
         None => panic!("No voice found for {:?}", declension),
     }
 }
@@ -188,6 +198,6 @@ fn find_inflection_verb_participle(
     }
 }
 
-fn find_inflection_verb_form(form: &[InflectionForm]) -> Vec<String> {
+fn find_inflection_form(form: &[InflectionForm]) -> Vec<String> {
     return form.iter().flat_map(|x| x.contracted.clone()).collect();
 }

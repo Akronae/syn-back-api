@@ -5,37 +5,39 @@ use crate::{
 };
 
 use anyhow::Context;
-use scraper::Html;
+use scraper::{selectable::Selectable, Html};
 
 use super::{definition, page};
 
-pub struct ScrappedPreposition {
+pub struct ScrappedParticle {
     pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
-pub async fn scrap_preposition(lemma: &str) -> Result<ScrappedPreposition, SafeError> {
+pub async fn scrap_particle(lemma: &str) -> Result<ScrappedParticle, SafeError> {
     let doc = page::scrap(lemma).await?;
 
     let inflection = WordInflection {
-        preposition: Some(vec![InflectionForm {
+        particle: Some(vec![InflectionForm {
             contracted: Some(lemma.to_string()),
             ..Default::default()
         }]),
         ..Default::default()
     };
-    let definitions = scrap_preposition_defs(&doc)?;
+    let definitions = scrap_particle_defs(&doc)?;
 
-    Ok(ScrappedPreposition {
+    Ok(ScrappedParticle {
         inflections: vec![inflection],
         definitions,
     })
 }
 
-pub fn scrap_preposition_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
-    let container = doc
-        .select(&select("#Preposition")?)
-        .next()
-        .with_context(|| "cannot find preposition header".to_string())?;
+pub fn scrap_particle_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
+    let particle = doc.select(&select("#Particle")?).next();
+    let conjunction = doc.select(&select("#Conjunction")?).next();
+
+    let container = particle
+        .or(conjunction)
+        .with_context(|| "cannot find particle header".to_string())?;
 
     let definitions = definition::extract_word_defs(&container)?;
 

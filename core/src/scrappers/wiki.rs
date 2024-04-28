@@ -20,17 +20,20 @@ use crate::{
     utils::str::closest::closest,
 };
 
+mod adverb;
 mod article;
-mod conjunction;
 mod definition;
 mod details;
 mod errors;
 mod noun;
+mod numeral;
 mod page;
 mod parser;
 mod participle;
+mod particle;
 mod preposition;
 mod pronoun;
+mod quantifier;
 mod table;
 mod verb;
 
@@ -40,7 +43,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(16),
+        verse_number: Some(17),
     })
     .await?
     .context("no verse")?;
@@ -50,7 +53,7 @@ pub async fn import() -> Result<(), SafeError> {
         declension: &Declension,
     ) -> Result<Option<LexiconEntry>, SafeError> {
         if declension.decl_type == Some(DeclensionType::Indeclinable)
-            || declension.part_of_speech == PartOfSpeech::Conjunction
+            || declension.part_of_speech == PartOfSpeech::Particle
         {
             return LexiconRepo::find_one(LexiconFilter {
                 lemma: Some(word.to_owned()),

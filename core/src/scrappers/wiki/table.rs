@@ -345,6 +345,10 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
             if header.content == ("n") || header.content == ("neuter") {
                 parsing.push(ParsingComp::Gender(Gender::Neuter));
             }
+            if header.content == "masculine / feminine" {
+                parsing.push(ParsingComp::Gender(Gender::Masculine));
+                parsing.push(ParsingComp::Gender(Gender::Feminine));
+            }
             if header.content == ("adverb") {
                 parsing.push(ParsingComp::PartOfSpeech(PartOfSpeech::Adverb));
             }
@@ -401,6 +405,24 @@ fn parse_table(table: &Table) -> Vec<ParsedWord> {
         }
         if table.title.contains("doric") {
             parsing.push(ParsingComp::Dialect(Dialect::Doric));
+        }
+        if table.title.contains("ionic") {
+            parsing.push(ParsingComp::Dialect(Dialect::Ionic));
+        }
+        if table.title.contains("aeolic") {
+            parsing.push(ParsingComp::Dialect(Dialect::Aeolic));
+        }
+        if table.title.contains("homeric") {
+            parsing.push(ParsingComp::Dialect(Dialect::Homeric));
+        }
+        if table.title.contains("arcadocypriot") {
+            parsing.push(ParsingComp::Dialect(Dialect::Arcadocypriot));
+        }
+        if table.title.contains("cretan") {
+            parsing.push(ParsingComp::Dialect(Dialect::Cretan));
+        }
+        if table.title.contains("macedonian") {
+            parsing.push(ParsingComp::Dialect(Dialect::Macedonian));
         }
 
         words.push(ParsedWord {

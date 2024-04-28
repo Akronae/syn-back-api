@@ -8,7 +8,7 @@ use nameof::name_of;
 use crate::{
     borrow::Cow,
     error::{MapErrSafe, SafeError},
-    grammar::{Declension, Mood, PartOfSpeech},
+    grammar::{Declension, Mood, Numeral, PartOfSpeech},
     persistence::get_db,
     utils::str::{camel_case::CamelCase, snake_case::SnakeCase},
 };
@@ -125,11 +125,15 @@ impl Declension {
         if matches!(self.part_of_speech, PartOfSpeech::Noun(_))
             || matches!(self.part_of_speech, PartOfSpeech::Article(_))
             || matches!(self.part_of_speech, PartOfSpeech::Pronoun(_))
+            || matches!(self.part_of_speech, PartOfSpeech::Quantifier)
+            || matches!(self.part_of_speech, PartOfSpeech::Numeral(_))
         {
             s.push(match self.part_of_speech {
                 PartOfSpeech::Noun(_) => "noun".into(),
                 PartOfSpeech::Article(_) => "article".into(),
                 PartOfSpeech::Pronoun(_) => "pronoun".into(),
+                PartOfSpeech::Quantifier => "quantifier".into(),
+                PartOfSpeech::Numeral(_) => "numeral".into(),
                 _ => return Err("part of speech not supported".to_string().into()),
             });
 
@@ -207,8 +211,30 @@ impl Declension {
 
             s.push("[]".into());
             s.push("contracted".into());
+        } else if matches!(self.part_of_speech, PartOfSpeech::Preposition)
+            || matches!(self.part_of_speech, PartOfSpeech::Particle)
+            || matches!(self.part_of_speech, PartOfSpeech::Adverb)
+        {
+            s.push(match self.part_of_speech {
+                PartOfSpeech::Preposition => "preposition".into(),
+                PartOfSpeech::Particle => "particle".into(),
+                PartOfSpeech::Adverb => "adverb".into(),
+                _ => return Err("part of speech not supported".to_string().into()),
+            });
+
+            s.push("[]".into());
+            s.push("contracted".into());
+        } else if let PartOfSpeech::Numeral(numeral) = self.part_of_speech {
+            s.push("numeral".into());
+            s.push(match numeral {
+                Numeral::Cardinal => "cardinal".into(),
+                Numeral::Ordinal => "ordinal".into(),
+                Numeral::Adverbial => "adverbial".into(),
+            });
+            s.push("[]".into());
+            s.push("contracted".into());
         } else {
-            return Ok(None);
+            panic!("part of speech not supported: {:?}", self.part_of_speech);
         }
 
         Ok(Some(s.join(".")))

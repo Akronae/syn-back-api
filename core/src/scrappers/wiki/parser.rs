@@ -5,9 +5,9 @@ use crate::{
     borrow::Cow,
     grammar::{Declension, Mood, PartOfSpeech},
     scrappers::wiki::{
-        article, conjunction,
+        adverb, article,
         details::{search_word_details, SearchMode},
-        noun, participle, preposition, pronoun, verb,
+        noun, numeral, participle, particle, preposition, pronoun, quantifier, verb,
     },
 };
 
@@ -47,23 +47,37 @@ pub async fn parse_word(
             lemma = participle.verb_lemma.into();
         } else {
             let verb = verb::scrap_verb(&details.lemma).await?;
-            definitions = verb.definitions;
             inflections.extend(verb.inflections);
+            definitions = verb.definitions;
         }
     } else if matches!(declension.part_of_speech, PartOfSpeech::Article(_)) {
         let article = article::scrap_article(&details.lemma).await?;
-        definitions = article.definitions;
         inflections.extend(article.inflections);
+        definitions = article.definitions;
     } else if matches!(declension.part_of_speech, PartOfSpeech::Pronoun(_)) {
         let pronoun = pronoun::scrap_pronoun(&details.lemma).await?;
-        definitions = pronoun.definitions;
         inflections.extend(pronoun.inflections);
-    } else if matches!(declension.part_of_speech, PartOfSpeech::Conjunction) {
-        let conjunction = conjunction::scrap_conjunction(&details.lemma).await?;
-        definitions = conjunction.definitions;
+        definitions = pronoun.definitions;
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Particle) {
+        let particle = particle::scrap_particle(&details.lemma).await?;
+        inflections.extend(particle.inflections);
+        definitions = particle.definitions;
     } else if matches!(declension.part_of_speech, PartOfSpeech::Preposition) {
         let preposition = preposition::scrap_preposition(&details.lemma).await?;
+        inflections.extend(preposition.inflections);
         definitions = preposition.definitions;
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Quantifier) {
+        let quantifier = quantifier::scrap_quantifier(&details.lemma).await?;
+        inflections.extend(quantifier.inflections);
+        definitions = quantifier.definitions;
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Adverb) {
+        let adverb = adverb::scrap_adverb(&details.lemma).await?;
+        inflections.extend(adverb.inflections);
+        definitions = adverb.definitions;
+    } else if matches!(declension.part_of_speech, PartOfSpeech::Numeral(_)) {
+        let numeral = numeral::scrap_numeral(&details.lemma).await?;
+        inflections.extend(numeral.inflections);
+        definitions = numeral.definitions;
     } else {
         panic!(
             "Unsupported part of speech: {:?}",

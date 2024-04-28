@@ -18,7 +18,7 @@ mod utils;
 async fn main() -> Result<(), SafeError> {
     log::init()?;
 
-    scrappers::abarim::import().await?;
+    // scrappers::abarim::import().await?;
     // scrappers::katabiblon::import().await?;
     scrappers::wiki::import().await?;
 

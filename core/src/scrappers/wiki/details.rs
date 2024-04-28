@@ -21,7 +21,10 @@ use crate::{
     },
 };
 
-use super::{article, conjunction, errors::ParseWordError, participle, preposition, pronoun, verb};
+use super::{
+    adverb, article, errors::ParseWordError, numeral, participle, particle, preposition, pronoun,
+    quantifier, verb,
+};
 
 #[allow(dead_code)]
 pub enum SearchMode {
@@ -99,8 +102,11 @@ async fn validate_page(
         },
         PartOfSpeech::Article(_) => article::scrap_article_defs(&doc)?,
         PartOfSpeech::Pronoun(_) => pronoun::scrap_pronoun_defs(&doc)?,
-        PartOfSpeech::Conjunction => conjunction::scrap_conjunction_defs(&doc)?,
+        PartOfSpeech::Particle => particle::scrap_particle_defs(&doc)?,
         PartOfSpeech::Preposition => preposition::scrap_preposition_defs(&doc)?,
+        PartOfSpeech::Quantifier => quantifier::scrap_quantifier_defs(&doc)?,
+        PartOfSpeech::Adverb => adverb::scrap_adverb_defs(&doc)?,
+        PartOfSpeech::Numeral(_) => numeral::scrap_numeral_defs(&doc)?,
         _ => panic!("unsupported part of speech: {:?}", pos),
     };
 
@@ -120,7 +126,7 @@ async fn validate_page(
 
     if !has_infl_table {
         match pos {
-            PartOfSpeech::Conjunction | PartOfSpeech::Preposition => return Ok(Some(lemma)),
+            PartOfSpeech::Particle | PartOfSpeech::Preposition => return Ok(Some(lemma)),
             _ => (),
         }
 
@@ -148,9 +154,12 @@ fn build_query_urls(word: Cow<str>, decl: &Declension) -> Vec<Cow<str>> {
             _ => vec!["Ancient_Greek_verbs", "Ancient_Greek_verb_forms"],
         },
         PartOfSpeech::Article(_) => vec!["Ancient_Greek_articles", "Ancient_Greek_article_forms"],
-        PartOfSpeech::Conjunction => vec!["Ancient_Greek_conjunctions"],
+        PartOfSpeech::Particle => vec!["Ancient_Greek_particles", "Ancient_Greek_conjunctions"],
         PartOfSpeech::Pronoun(_) => vec!["Ancient_Greek_pronouns", "Ancient_Greek_pronoun_forms"],
         PartOfSpeech::Preposition => vec!["Ancient_Greek_prepositions"],
+        PartOfSpeech::Quantifier => vec!["Ancient_Greek_determiners"],
+        PartOfSpeech::Adverb => vec!["Ancient_Greek_adverbs"],
+        PartOfSpeech::Numeral(_) => vec!["Ancient_Greek_numerals"],
         _ => panic!("unsupported part of speech: {:?}", pos),
     };
 

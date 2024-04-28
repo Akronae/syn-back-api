@@ -32,8 +32,12 @@ pub struct WordInflection {
     pub noun: Option<Box<NounInflectionGenders>>,
     pub article: Option<Box<NounInflectionGenders>>,
     pub pronoun: Option<Box<NounInflectionGenders>>,
+    pub quantifier: Option<Box<NounInflectionGenders>>,
+    pub numeral: Option<Box<NounInflectionGenders>>,
     pub verb: Option<Box<VerbInflectionTenses>>,
     pub adverb: Option<Vec<InflectionForm>>,
+    pub particle: Option<Vec<InflectionForm>>,
+    pub preposition: Option<Vec<InflectionForm>>,
     pub adjective: Option<WordAdjective>,
 }
 

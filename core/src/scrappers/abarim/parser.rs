@@ -166,11 +166,12 @@ fn parse_word(
         .map(|e| e.inner_text(word_dom.parser()).to_string())
         .collect();
 
-    let declension =
+    let mut declension =
         match declension::get_word_fix(book, chapter_number, verse_number, word_number, greek) {
             Some(d) => d,
             None => declension::get_word_declension(&declension_comps),
         };
+    declension::fix_declension(greek, &english, &mut declension);
 
     Ok(Word {
         text: greek.to_owned(),

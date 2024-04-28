@@ -5,37 +5,36 @@ use crate::{
 };
 
 use anyhow::Context;
-use scraper::Html;
+use scraper::{selectable::Selectable, Html};
 
 use super::{definition, page};
 
-pub struct ScrappedPreposition {
+pub struct ScrappedAdverb {
     pub inflections: Vec<WordInflection>,
     pub definitions: Vec<LexiconEntryDefinition>,
 }
-pub async fn scrap_preposition(lemma: &str) -> Result<ScrappedPreposition, SafeError> {
+pub async fn scrap_adverb(lemma: &str) -> Result<ScrappedAdverb, SafeError> {
     let doc = page::scrap(lemma).await?;
 
     let inflection = WordInflection {
-        preposition: Some(vec![InflectionForm {
+        adverb: Some(vec![InflectionForm {
             contracted: Some(lemma.to_string()),
             ..Default::default()
         }]),
         ..Default::default()
     };
-    let definitions = scrap_preposition_defs(&doc)?;
+    let definitions = scrap_adverb_defs(&doc)?;
 
-    Ok(ScrappedPreposition {
+    Ok(ScrappedAdverb {
         inflections: vec![inflection],
         definitions,
     })
 }
 
-pub fn scrap_preposition_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
-    let container = doc
-        .select(&select("#Preposition")?)
-        .next()
-        .with_context(|| "cannot find preposition header".to_string())?;
+pub fn scrap_adverb_defs(doc: &Html) -> Result<Vec<LexiconEntryDefinition>, SafeError> {
+    let adverb = doc.select(&select("#Adverb")?).next();
+
+    let container = adverb.with_context(|| "cannot find adverb header".to_string())?;
 
     let definitions = definition::extract_word_defs(&container)?;
 

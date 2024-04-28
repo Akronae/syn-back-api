@@ -15,10 +15,11 @@ pub enum PartOfSpeech {
     Verb,
     Adverb,
     Preposition,
-    Conjunction,
+    Particle,
     Interjection,
-    Numeral,
-    Determiner,
+    Quantifier,
+    #[serde(untagged)]
+    Numeral(Numeral),
     #[serde(untagged)]
     Noun(Noun),
     #[serde(untagged)]
@@ -90,6 +91,21 @@ pub enum Adjective {
     Comparative,
     #[serde(rename = "adjective_superlative")]
     Superlative,
+}
+
+#[derive(
+    Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Display, Hash, Eq, PartialOrd, Ord,
+)]
+#[strum(serialize_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
+pub enum Numeral {
+    #[serde(rename = "numeral_cardinal")]
+    Cardinal,
+    #[serde(rename = "numeral_ordinal")]
+    Ordinal,
+    #[serde(rename = "numeral_adverbial")]
+    Adverbial,
 }
 
 #[derive(
@@ -311,4 +327,10 @@ pub enum Dialect {
     Epic,
     Laconian,
     Doric,
+    Ionic,
+    Aeolic,
+    Homeric,
+    Arcadocypriot,
+    Cretan,
+    Macedonian,
 }
