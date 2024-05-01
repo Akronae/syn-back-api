@@ -22,8 +22,8 @@ use crate::{
 };
 
 use super::{
-    adverb, article, errors::ParseWordError, numeral, participle, particle, preposition, pronoun,
-    quantifier, verb,
+    adjective, adverb, article, errors::ParseWordError, numeral, participle, particle, preposition,
+    pronoun, quantifier, verb,
 };
 
 #[allow(dead_code)]
@@ -107,13 +107,12 @@ async fn validate_page(
         PartOfSpeech::Quantifier => quantifier::scrap_quantifier_defs(&doc)?,
         PartOfSpeech::Adverb => adverb::scrap_adverb_defs(&doc)?,
         PartOfSpeech::Numeral(_) => numeral::scrap_numeral_defs(&doc)?,
+        PartOfSpeech::Adjective(_) => adjective::scrap_adjective_defs(&doc)?,
         _ => panic!("unsupported part of speech: {:?}", pos),
     };
 
     if let Some(LexiconEntryDefinition::FormOf(formof)) = def.first() {
-        if similarity_score(query.clone(), formof.lemma.clone().into())
-            >= similarity_score(query.clone(), lemma.clone())
-        {
+        if !matches!(decl.mood, Some(Mood::Participle)) && similarity_score(query.clone(), formof.lemma.clone().into()) >= similarity_score(query.clone(), lemma.clone()) {
             return validate_page(formof.lemma.clone().into(), decl, query).await;
         }
     }
@@ -160,6 +159,7 @@ fn build_query_urls(word: Cow<str>, decl: &Declension) -> Vec<Cow<str>> {
         PartOfSpeech::Quantifier => vec!["Ancient_Greek_determiners"],
         PartOfSpeech::Adverb => vec!["Ancient_Greek_adverbs"],
         PartOfSpeech::Numeral(_) => vec!["Ancient_Greek_numerals"],
+        PartOfSpeech::Adjective(_) => vec!["Ancient_Greek_adjectives"],
         _ => panic!("unsupported part of speech: {:?}", pos),
     };
 

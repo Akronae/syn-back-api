@@ -154,6 +154,11 @@ impl Declension {
 
             s.push("[]".into());
             s.push("contracted".into());
+        } else if let PartOfSpeech::Adjective(adj) = self.part_of_speech {
+            s.push("adjective".into());
+            s.push(str(&adj));
+            s.push("[]".into());
+            s.push("contracted".into());
         } else if PartOfSpeech::Verb == self.part_of_speech {
             s.push("verb".into());
 
@@ -197,6 +202,8 @@ impl Declension {
                     Some(x) => str(x),
                     None => return Err("case required".to_string().into()),
                 })
+            } else if matches!(self.mood, Some(Mood::Infinitive)) {
+                // skip
             } else {
                 s.push(match &self.number {
                     Some(x) => str(x),

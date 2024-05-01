@@ -17,9 +17,13 @@ use crate::{
         katabiblon,
         wiki::{details::SearchMode, errors::ParseWordError},
     },
-    utils::str::closest::closest,
+    utils::str::{
+        closest::closest,
+        remove_diacritics::{remove_diacritics},
+    },
 };
 
+mod adjective;
 mod adverb;
 mod article;
 mod definition;
@@ -43,7 +47,7 @@ pub async fn import() -> Result<(), SafeError> {
         collection: Some("new_testament".to_string()),
         book: Some("matthew".to_string()),
         chapter_number: Some(1),
-        verse_number: Some(17),
+        verse_number: Some(18),
     })
     .await?
     .context("no verse")?;
@@ -77,24 +81,27 @@ pub async fn import() -> Result<(), SafeError> {
         if old.text == word.text {
             return Ok(());
         }
-        let confirmed = cliclack::confirm(format!(
-            "change {} -> {} at word #{index} of verse {}:{}:{}?\n  '{}'",
-            old.text,
-            word.text,
-            verse.book,
-            verse.chapter_number,
-            verse.verse_number,
-            verse
-                .words
-                .iter()
-                .map(|w| w.text.clone())
-                .collect::<Vec<String>>()
-                .join(" ")
-        ))
-        .initial_value(true)
-        .interact()?;
-        if !confirmed {
-            return Ok(());
+        let requires_confirm = remove_diacritics(&old.text) != remove_diacritics(&word.text);
+        if requires_confirm {
+            let confirmed = cliclack::confirm(format!(
+                "change {} -> {} at word #{index} of verse {}:{}:{}?\n  '{}'",
+                old.text,
+                word.text,
+                verse.book,
+                verse.chapter_number,
+                verse.verse_number,
+                verse
+                    .words
+                    .iter()
+                    .map(|w| w.text.clone())
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            ))
+            .initial_value(true)
+            .interact()?;
+            if !confirmed {
+                return Ok(());
+            }
         }
 
         verse.words[index] = word.clone();
@@ -178,12 +185,27 @@ pub async fn import() -> Result<(), SafeError> {
                 );
             }
         } else if parsed.lemma != word.text {
-            word.text = parsed.lemma.to_owned();
-            update_word(&mut verse, word, word_i).await?;
+            if matches!(word.declension.part_of_speech, PartOfSpeech::Verb) {
+                let skip = cliclack::confirm(format!(
+                    "could not inflect verb {} to lemma {}. skip?",
+                    word.text, parsed.lemma
+                ))
+                .initial_value(false)
+                .interact()?;
+                if skip {
+                    continue;
+                }
+                panic!(
+                    "could not inflect verb {} to lemma {}",
+                    word.text, parsed.lemma
+                );
+            }
             debug!(
                 "{} has no inflection, so changing to lemma {}",
                 word.text, parsed.lemma
             );
+            word.text = parsed.lemma.to_owned();
+            update_word(&mut verse, word, word_i).await?;
         }
 
         if word.declension != declension {

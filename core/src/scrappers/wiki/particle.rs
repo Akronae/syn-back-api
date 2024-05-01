@@ -5,7 +5,7 @@ use crate::{
 };
 
 use anyhow::Context;
-use scraper::{selectable::Selectable, Html};
+use scraper::Html;
 
 use super::{definition, page};
 

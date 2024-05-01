@@ -38,15 +38,15 @@ pub struct WordInflection {
     pub adverb: Option<Vec<InflectionForm>>,
     pub particle: Option<Vec<InflectionForm>>,
     pub preposition: Option<Vec<InflectionForm>>,
-    pub adjective: Option<WordAdjective>,
+    pub adjective: Option<Box<WordAdjective>>,
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Default, Debug, Clone, Hash, PartialEq)]
 pub struct WordAdjective {
-    pub positive: Option<Vec<InflectionForm>>,
-    pub comparative: Option<Vec<InflectionForm>>,
-    pub superlative: Option<Vec<InflectionForm>>,
+    pub positive: Option<Box<NounInflectionGenders>>,
+    pub comparative: Option<Box<NounInflectionGenders>>,
+    pub superlative: Option<Box<NounInflectionGenders>>,
 }
 
 #[serde_with::skip_serializing_none]

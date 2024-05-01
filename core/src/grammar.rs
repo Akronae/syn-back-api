@@ -191,9 +191,7 @@ pub enum Tense {
     Future,
     FuturePerfect,
     Aorist,
-    Aorist2nd,
     Perfect,
-    Perfect2nd,
     Pluperfect,
 }
 

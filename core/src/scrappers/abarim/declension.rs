@@ -254,11 +254,7 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
     };
 
     let gender = match pos {
-        PartOfSpeech::Pronoun(Pronoun::Personal)
-            if person != Some(Person::Third) || number != Some(Number::Singular) =>
-        {
-            None
-        }
+        PartOfSpeech::Pronoun(Pronoun::Personal) if person != Some(Person::Third) => None,
         PartOfSpeech::Noun(Noun::Common)
         | PartOfSpeech::Noun(Noun::Proper)
         | PartOfSpeech::Pronoun(_)
@@ -332,9 +328,9 @@ pub fn get_word_declension(comps: &Vec<String>) -> Declension {
             s if s.contains(&"imp") => Some(Tense::Imperfect),
             s if s.contains(&"fut") => Some(Tense::Future),
             s if s.contains(&"aor") => Some(Tense::Aorist),
-            s if s.contains(&"2aor") => Some(Tense::Aorist2nd),
+            s if s.contains(&"2aor") => Some(Tense::Aorist),
             s if s.contains(&"perf") => Some(Tense::Perfect),
-            s if s.contains(&"2perf") => Some(Tense::Perfect2nd),
+            s if s.contains(&"2perf") => Some(Tense::Perfect),
             s if s.contains(&"plup") => Some(Tense::Pluperfect),
             _ => panic!(
                 "cannot find tense with comps: {:?} in {:?}",

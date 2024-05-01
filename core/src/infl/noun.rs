@@ -1,13 +1,12 @@
 use crate::{
     api::lexicon::lexicon_model::{
         InflectionForm, NounInflectionCases, NounInflectionGenders, NounInflectionNumbers,
-        WordInflection,
     },
     error::SafeError,
     grammar::{Declension, DeclensionType, Gender},
 };
 
-pub fn inflect(lemma: &str, declension: &Declension) -> Result<Box<WordInflection>, SafeError> {
+pub fn inflect(lemma: &str, declension: &Declension) -> Result<NounInflectionGenders, SafeError> {
     let numbers = match declension.decl_type {
         Some(DeclensionType::First) => inflect_1st(lemma, declension)?,
         _ => {
@@ -35,10 +34,7 @@ pub fn inflect(lemma: &str, declension: &Declension) -> Result<Box<WordInflectio
         None => return Err(format!("could not gendr for {lemma}").into()),
     };
 
-    Ok(Box::from(WordInflection {
-        noun: Some(Box::from(genders)),
-        ..Default::default()
-    }))
+    Ok(genders)
 }
 
 fn inflect_1st(

@@ -132,7 +132,7 @@ fn extract_table_cells(table: &scraper::ElementRef) -> Result<Table, SafeError> 
                 let polyt = polyts.last();
 
                 if let Some(polyt) = polyt {
-                    for child in polyt.children() {
+                    for child in polyt.children().filter(|x| x.value().is_element()) {
                         if child
                             .value()
                             .as_element()
@@ -209,6 +209,19 @@ pub enum ParsingComp {
     PartOfSpeech(PartOfSpeech),
     Theme(Theme),
 }
+
+impl ParsingComp {
+    pub fn is_number(&self) -> bool {
+        matches!(self, ParsingComp::Number(_))
+    }
+    pub fn is_case(&self) -> bool {
+        matches!(self, ParsingComp::Case(_))
+    }
+    pub fn is_gender(&self) -> bool {
+        matches!(self, ParsingComp::Gender(_))
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct ParsedWord {
     pub text: Cow<str>,

@@ -9,7 +9,8 @@ use crate::{
 use super::{
     lexicon_model::{
         InflectionForm, LexiconEntry, LexiconFilter, NounInflectionGenders,
-        VerbInflectionInfinitive, VerbInflectionParticiple, VerbInflectionTenses, WordInflection,
+        VerbInflectionInfinitive, VerbInflectionParticiple, VerbInflectionTenses, WordAdjective,
+        WordInflection,
     },
     lexicon_repo::LexiconRepo,
 };
@@ -64,6 +65,10 @@ impl WordInflection {
             let numeral = self.numeral.as_ref().unwrap();
 
             return find_inflection_noun(declension, numeral);
+        } else if matches!(declension.part_of_speech, PartOfSpeech::Adjective(_)) {
+            let adjective = self.adjective.as_ref().unwrap();
+
+            return find_inflection_adjective(declension, adjective);
         } else {
             panic!(
                 "Unsupported part of speech: {:?}",
@@ -76,12 +81,10 @@ impl WordInflection {
 fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) -> Vec<String> {
     let tense = match declension.tense {
         Some(Tense::Aorist) => verb.aorist.as_ref().unwrap(),
-        Some(Tense::Aorist2nd) => verb.aorist_2nd.as_ref().unwrap(),
         Some(Tense::Future) => verb.future.as_ref().unwrap(),
         Some(Tense::FuturePerfect) => verb.future_perfect.as_ref().unwrap(),
         Some(Tense::Imperfect) => verb.imperfect.as_ref().unwrap(),
         Some(Tense::Perfect) => verb.perfect.as_ref().unwrap(),
-        Some(Tense::Perfect2nd) => verb.perfect_2nd.as_ref().unwrap(),
         Some(Tense::Pluperfect) => verb.pluperfect.as_ref().unwrap(),
         Some(Tense::Present) => verb.present.as_ref().unwrap(),
         None => panic!("No tense found for {:?}", declension),
@@ -142,6 +145,21 @@ fn find_inflection_verb(declension: &Declension, verb: &VerbInflectionTenses) ->
     };
 
     find_inflection_form(person)
+}
+
+fn find_inflection_adjective(declension: &Declension, adjective: &WordAdjective) -> Vec<String> {
+    let adj = match declension.part_of_speech {
+        PartOfSpeech::Adjective(adj) => match adj {
+            crate::grammar::Adjective::Positive => adjective.positive.as_ref().unwrap(),
+            crate::grammar::Adjective::Comparative => adjective.comparative.as_ref().unwrap(),
+            crate::grammar::Adjective::Superlative => adjective.superlative.as_ref().unwrap(),
+        },
+        _ => panic!(
+            "pos should be an adjective: {:?}",
+            declension.part_of_speech
+        ),
+    };
+    find_inflection_noun(declension, adj)
 }
 
 fn find_inflection_noun(declension: &Declension, noun: &NounInflectionGenders) -> Vec<String> {

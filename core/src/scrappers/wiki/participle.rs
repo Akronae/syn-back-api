@@ -4,11 +4,12 @@ use crate::{
     },
     error::SafeError,
     grammar::{
-        Adjective, Contraction, Mood, PartOfSpeech, Tense, Theme, Voice,
+        Adjective, Case, Contraction, Gender, Mood, Number, PartOfSpeech, Tense, Theme, Voice,
     },
     scrappers::wiki::table::parse_declension_table,
     utils::scrapper::select::select,
 };
+
 
 use anyhow::Context;
 use scraper::Html;
@@ -40,6 +41,7 @@ pub async fn scrap_participle(lemma: &str) -> Result<ScrappedParticiple, SafeErr
         };
         voices = match &formof.text {
             x if x.contains("mediopassive") => vec![Voice::Middle, Voice::Passive],
+            x if x.contains("active") => vec![Voice::Active],
             _ => panic!("cannot find voices in {:?}", formof.text),
         }
     } else {
@@ -137,14 +139,6 @@ fn fill_tenses(word: &ParsedWord, tenses: &mut VerbInflectionTenses) {
         let aorist = tenses.aorist.as_mut().unwrap();
         verb::fill_themes(word, aorist);
     }
-
-    if word.parsing.contains(&ParsingComp::Tense(Tense::Aorist2nd)) {
-        if tenses.aorist_2nd.is_none() {
-            tenses.aorist_2nd = Some(Default::default());
-        }
-        let aorist_2nd = tenses.aorist_2nd.as_mut().unwrap();
-        verb::fill_themes(word, aorist_2nd);
-    }
     if word.parsing.contains(&ParsingComp::Tense(Tense::Future)) {
         if tenses.future.is_none() {
             tenses.future = Some(Default::default());
@@ -178,17 +172,6 @@ fn fill_tenses(word: &ParsedWord, tenses: &mut VerbInflectionTenses) {
     }
     if word
         .parsing
-        .contains(&ParsingComp::Tense(Tense::Perfect2nd))
-    {
-        if tenses.perfect_2nd.is_none() {
-            tenses.perfect_2nd = Some(Default::default());
-        }
-        let perfect_2nd = tenses.perfect_2nd.as_mut().unwrap();
-        verb::fill_themes(word, perfect_2nd);
-    }
-
-    if word
-        .parsing
         .contains(&ParsingComp::Tense(Tense::Pluperfect))
     {
         if tenses.pluperfect.is_none() {
@@ -208,27 +191,38 @@ fn fill_tenses(word: &ParsedWord, tenses: &mut VerbInflectionTenses) {
 }
 
 fn fill_adjective(word: &ParsedWord, adjective: &mut WordAdjective, adj: &Adjective) {
+    let mut word = word.clone();
+    if !word.parsing.iter().any(|x| x.is_number()) {
+        word.parsing.push(ParsingComp::Number(Number::Singular));
+    }
+    if !word.parsing.iter().any(|x| x.is_case()) {
+        word.parsing.push(ParsingComp::Case(Case::Nominative));
+    }
+    if !word.parsing.iter().any(|x| x.is_gender()) {
+        word.parsing.push(ParsingComp::Gender(Gender::Masculine));
+    }
+
     match adj {
         Adjective::Positive => {
             if adjective.positive.is_none() {
                 adjective.positive = Some(Default::default());
             }
             let positive = adjective.positive.as_mut().unwrap();
-            noun::fill_forms(word, positive);
+            noun::fill_genders(&word, positive);
         }
         Adjective::Comparative => {
             if adjective.comparative.is_none() {
                 adjective.comparative = Some(Default::default());
             }
             let comparative = adjective.comparative.as_mut().unwrap();
-            noun::fill_forms(word, comparative);
+            noun::fill_genders(&word, comparative);
         }
         Adjective::Superlative => {
             if adjective.superlative.is_none() {
                 adjective.superlative = Some(Default::default());
             }
             let superlative = adjective.superlative.as_mut().unwrap();
-            noun::fill_forms(word, superlative);
+            noun::fill_genders(&word, superlative);
         }
     }
 }

@@ -86,8 +86,6 @@ fn grab_tense_field<'a>(
         Tense::Perfect => tenses.perfect.as_mut(),
         Tense::Pluperfect => tenses.pluperfect.as_mut(),
         Tense::FuturePerfect => tenses.future_perfect.as_mut(),
-        Tense::Aorist2nd => tenses.aorist_2nd.as_mut(),
-        Tense::Perfect2nd => tenses.perfect_2nd.as_mut(),
     }
 }
 
@@ -103,8 +101,6 @@ fn set_tense_field(infl: &mut WordInflection, tense: &Tense, value: VerbInflecti
         Tense::Perfect => tenses.perfect = Some(Box::from(value)),
         Tense::Pluperfect => tenses.pluperfect = Some(Box::from(value)),
         Tense::FuturePerfect => tenses.future_perfect = Some(Box::from(value)),
-        Tense::Aorist2nd => tenses.aorist_2nd = Some(Box::from(value)),
-        Tense::Perfect2nd => tenses.perfect_2nd = Some(Box::from(value)),
     }
 }
 

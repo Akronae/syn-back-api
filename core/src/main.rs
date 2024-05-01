@@ -5,6 +5,7 @@ mod borrow;
 mod config;
 mod error;
 mod grammar;
+mod infl;
 mod log;
 mod persistence;
 mod redis;

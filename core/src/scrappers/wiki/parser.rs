@@ -5,7 +5,7 @@ use crate::{
     borrow::Cow,
     grammar::{Declension, Mood, PartOfSpeech},
     scrappers::wiki::{
-        adverb, article,
+        adjective, adverb, article,
         details::{search_word_details, SearchMode},
         noun, numeral, participle, particle, preposition, pronoun, quantifier, verb,
     },
@@ -78,6 +78,10 @@ pub async fn parse_word(
         let numeral = numeral::scrap_numeral(&details.lemma).await?;
         inflections.extend(numeral.inflections);
         definitions = numeral.definitions;
+    } else if let PartOfSpeech::Adjective(adj) = declension.part_of_speech {
+        let adjective = adjective::scrap_adjective(&details.lemma, &adj).await?;
+        inflections.extend(adjective.inflections);
+        definitions = adjective.definitions;
     } else {
         panic!(
             "Unsupported part of speech: {:?}",
